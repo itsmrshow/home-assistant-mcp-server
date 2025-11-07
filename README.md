@@ -106,48 +106,23 @@ This add-on enables **Cursor AI to autonomously manage your Home Assistant** thr
 
 ### How to Connect Cursor AI
 
-Once the add-on is installed and running, give Cursor AI this prompt:
+Once the add-on is installed and running, give Cursor AI this simple prompt:
 
 ```
 I have HA Cursor Agent running on my Home Assistant.
 
 Token: YOUR_LONG_LIVED_ACCESS_TOKEN
 API URL: http://homeassistant.local:8099
-API Documentation: http://homeassistant.local:8099/docs
 
-CRITICAL INSTRUCTIONS - READ CAREFULLY:
+Please read the full instructions at:
+https://github.com/Coolver/home-assistant-cursor-agent/blob/main/DOCS.md#cursor-ai-instructions
 
-1. ALWAYS analyze my current Home Assistant configuration files FIRST
-   - Read configuration.yaml to understand my HA version and setup
-   - Check existing automations.yaml, scripts.yaml format
-   - Identify current integrations and their syntax
-
-2. VERIFY compatibility before making changes:
-   - Compare your knowledge with my actual HA version
-   - If uncertain about syntax, CHECK the current file format first
-   - DO NOT use deprecated YAML syntax or outdated configuration formats
-   - When in doubt, ask me to confirm the approach
-
-3. Safety protocols:
-   - ALWAYS create a Git backup before modifications (use /api/backup/commit)
-   - Show me what you're going to change BEFORE applying it
-   - Provide links to view changes in browser when relevant
-   - If configuration check fails, immediately rollback
-
-4. After making changes, provide me with:
-   - Summary of what was modified
-   - Direct links to verify changes (e.g., http://homeassistant.local:8123/config/automation)
-   - Instructions to test the new functionality
-   - Rollback command if something goes wrong
-
-You can now use this API to:
-- Read and modify my Home Assistant configuration files
-- Create helpers, automations, and scripts automatically
-- Query all my devices and entities
-- Manage everything with automatic Git backups
+Confirm you understand the safety protocols and are ready to help.
 
 My request: [describe what you want]
 ```
+
+**That's it!** Cursor AI will read the detailed instructions from DOCS.md and follow all safety protocols automatically.
 
 ### Example Prompts
 

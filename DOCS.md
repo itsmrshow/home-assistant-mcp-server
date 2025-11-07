@@ -4,6 +4,60 @@
 
 ---
 
+## 🤖 For Cursor AI: Quick Start
+
+### Connection Prompt (Copy This)
+
+```
+I have HA Cursor Agent running on my Home Assistant.
+
+Token: YOUR_TOKEN_HERE
+API URL: http://homeassistant.local:8099
+
+Please read the Cursor AI instructions at:
+https://github.com/Coolver/home-assistant-cursor-agent/blob/main/DOCS.md#cursor-ai-instructions
+
+Confirm you understand the safety protocols and are ready to help.
+
+My request: [describe what you want]
+```
+
+### Cursor AI Instructions {#cursor-ai-instructions}
+
+**READ THESE BEFORE MAKING ANY CHANGES TO USER'S HOME ASSISTANT**
+
+#### 1️⃣ Analysis First (MANDATORY)
+- Read `configuration.yaml` to understand HA version and structure
+- Check existing `automations.yaml`, `scripts.yaml` format
+- Query `/api/entities/list` to understand user's devices
+- **Never assume** - always verify current state
+
+#### 2️⃣ Verify Compatibility
+- Compare your knowledge with user's actual HA version
+- Check if syntax matches current files format
+- DO NOT use deprecated YAML syntax
+- When uncertain, ASK user first
+
+#### 3️⃣ Safety Protocols
+- **ALWAYS** create backup: `POST /api/backup/commit`
+- Show planned changes BEFORE applying
+- Make changes incrementally (test each step)
+- Provide verification links after changes
+
+#### 4️⃣ After Changes
+- Summary of what was modified
+- Links: `http://homeassistant.local:8123/config/automation` (etc.)
+- Testing instructions
+- Rollback command if needed
+
+#### 🚫 Never Do
+- ❌ Skip reading current configuration
+- ❌ Use outdated syntax from training data
+- ❌ Make changes without backup
+- ❌ Ignore configuration check errors
+
+---
+
 ## 🔗 Base URL
 
 ```

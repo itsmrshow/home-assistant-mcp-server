@@ -4,6 +4,7 @@ Enables Cursor AI to manage Home Assistant configuration
 """
 import os
 import logging
+import aiohttp
 from fastapi import FastAPI, HTTPException, Depends, Security
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,27 +41,46 @@ security = HTTPBearer()
 # Get tokens from environment
 SUPERVISOR_TOKEN = os.getenv('SUPERVISOR_TOKEN', '')  # Auto-provided by HA when running as add-on
 DEV_TOKEN = os.getenv('HA_TOKEN', '')  # For local development only
+HA_URL = os.getenv('HA_URL', 'http://supervisor/core')
 
-def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)):
+async def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)):
     """
-    Verify API token.
+    Verify API token by validating it against Home Assistant API.
     
-    Add-on mode (when SUPERVISOR_TOKEN exists):
-    - Accept any token - user already authenticated in HA
-    - Agent uses SUPERVISOR_TOKEN for internal HA API calls
+    Add-on mode (SUPERVISOR_TOKEN exists):
+    - Validates user's Long-Lived Access Token by making test request to HA API
+    - If token is valid in HA, grants access to agent
+    - Agent uses SUPERVISOR_TOKEN internally for privileged operations
     
     Development mode (no SUPERVISOR_TOKEN):
-    - Validate against DEV_TOKEN environment variable
+    - Validates against DEV_TOKEN environment variable
     """
     token = credentials.credentials
     
     if SUPERVISOR_TOKEN:
-        # Running as HA add-on: accept any valid-looking token
-        # User provides their Long-Lived Access Token for identification
-        # Internal HA API calls use SUPERVISOR_TOKEN (full permissions)
-        if len(token) < 20:  # Basic sanity check
-            raise HTTPException(status_code=401, detail="Invalid token format")
-        return token
+        # Add-on mode: validate token against HA API
+        try:
+            async with aiohttp.ClientSession() as session:
+                # Test token by calling HA API
+                async with session.get(
+                    f"{HA_URL}/api/",
+                    headers={"Authorization": f"Bearer {token}"},
+                    timeout=aiohttp.ClientTimeout(total=5)
+                ) as response:
+                    if response.status == 200:
+                        logger.debug(f"Token validated successfully")
+                        return token
+                    else:
+                        logger.warning(f"Invalid token: HA API returned {response.status}")
+                        raise HTTPException(status_code=401, detail="Invalid Home Assistant token")
+        except aiohttp.ClientError as e:
+            logger.error(f"Failed to validate token: {e}")
+            raise HTTPException(status_code=401, detail=f"Token validation failed: {str(e)}")
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Token validation error: {e}")
+            raise HTTPException(status_code=401, detail="Token validation failed")
     else:
         # Development mode: strict token check
         if not DEV_TOKEN or token != DEV_TOKEN:

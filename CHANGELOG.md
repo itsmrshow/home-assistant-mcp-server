@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.10] - 2025-11-08
+
+### Fixed
+- **Notification logic** - moved into get_or_generate_api_key() function
+- Removed problematic `@app.on_event("startup")` decorator
+- Fixed async context for notification sending
+- Application now starts correctly with notification feature enabled
+
 ## [1.0.9] - 2025-11-08
 
 ### 🔒 Security & UX Improvements

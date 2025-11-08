@@ -1,6 +1,10 @@
 # HA Cursor Agent - Home Assistant Add-on
 
-**AI Agent API for Home Assistant - enables Cursor AI to autonomously manage your HA configuration**
+**Let AI build your Home Assistant automations - just describe what you want in natural language** 🏠🤖
+
+Stop manually writing YAML configurations! This add-on enables Cursor AI to analyze YOUR Home Assistant setup and autonomously create intelligent automations, scripts, and systems tailored to your specific devices.
+
+**Real example:** User says *"Install smart climate control"* → AI analyzes 7 TRVs, creates 10 automations + 9 helpers + 10 sensors + 5 scripts, deploys everything, and it just works!
 
 [![Version](https://img.shields.io/badge/version-1.0.6-blue.svg)](https://github.com/Coolver/home-assistant-cursor-agent)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -10,17 +14,26 @@
 
 ## 🎯 What is this?
 
-**HA Cursor Agent** is a Home Assistant Add-on that provides a **REST API** for AI assistants (like Cursor AI via [MCP protocol](https://github.com/Coolver/mcp-home-assistant)) to:
+**HA Cursor Agent** is a Home Assistant Add-on that provides a **REST API** enabling AI assistants (like Cursor AI via [MCP protocol](https://github.com/Coolver/mcp-home-assistant)) to:
 
-✅ **Read/Write** configuration files (configuration.yaml, automations.yaml, scripts.yaml)  
-✅ **Create/Manage** Input Helpers, Automations, Scripts  
-✅ **Query** all devices, entities, and their states  
-✅ **Reload** components without restarting HA  
-✅ **Version control** with Git (automatic backups, rollback)  
-✅ **Validate** configuration before applying  
-✅ **Monitor** agent activity through logs API  
+### 🔍 Analyze Your Setup
+✅ **Read entire configuration** - entities, automations, scripts, helpers  
+✅ **Understand your devices** - detects capabilities and relationships  
+✅ **Learn existing patterns** - analyzes what you already have  
 
-**Result:** AI can autonomously install and configure complex systems (like smart climate control) without manual copy-pasting! 🚀
+### 🏗️ Build Intelligence
+✅ **Create complete systems** - 10+ interconnected automations in seconds  
+✅ **Generate helpers and sensors** - tailored to your needs  
+✅ **Write optimized scripts** - based on your actual devices  
+✅ **Deploy dashboards** - with all your entities  
+
+### 🔒 Safe Operations
+✅ **Git versioning** - automatic backups of every change  
+✅ **Configuration validation** - tests before applying  
+✅ **Rollback capability** - undo any change instantly  
+✅ **Activity monitoring** - full audit log of all operations  
+
+**Result:** Describe your goal → AI analyzes your setup → Creates custom solution → Deploys automatically! 🚀
 
 ---
 
@@ -182,38 +195,51 @@ Create a new automation that turns on lights at sunset
 
 **Learn more:** [MCP Home Assistant on GitHub](https://github.com/Coolver/mcp-home-assistant) | [NPM Package](https://www.npmjs.com/package/@coolver/mcp-home-assistant)
 
-### Example Prompts
+### Real-World Examples
 
-**Install Climate Control System:**
+**Build Smart Climate Control:**
 ```
-Install Climate Control V3 with buffer radiators for my TRVs.
-Analyze my current setup and configure it automatically.
-```
-
-**Create Automation:**
-```
-Create an automation that turns on my living room lights 
-when motion is detected after sunset.
+Install a smart climate control system for my TRV radiators. 
+Analyze my current devices, create automations for efficient heating 
+with predictive shutdown, buffer radiators, and adaptive cooldowns.
+Set up monitoring sensors and dashboard.
 ```
 
-**Configure System:**
+**AI will autonomously:**
+- Detect all your TRV entities by analyzing Home Assistant
+- Create 10+ automations for intelligent heating control
+- Add 9 input helpers for system state management
+- Generate 10 template sensors for monitoring
+- Create 5 scripts for boiler and buffer control
+- Build Lovelace dashboard with all metrics
+- Test and deploy everything
+- **All tailored to YOUR specific TRVs and configuration!**
+
+**Optimize Existing System:**
 ```
-Set up a presence detection system using my phone's 
-location and notify me when I'm approaching home.
+My heating wastes energy. Analyze my current climate automations 
+and optimize for efficiency while maintaining comfort.
+```
+
+**Debug Issues:**
+```
+My bedroom lights automation isn't working. Check the logs, 
+find the problem, and fix it.
 ```
 
 ### What Cursor AI Can Do
 
-With this add-on, Cursor AI can:
+With this add-on and [MCP integration](https://github.com/Coolver/mcp-home-assistant), Cursor AI can:
 
-✅ **Read your entire HA configuration** - no need to paste files  
-✅ **Create complex systems in seconds** - automations, scripts, helpers  
+✅ **Analyze YOUR configuration** - detects your actual devices and entities  
+✅ **Create complex systems autonomously** - 10+ interconnected automations  
+✅ **Tailored to your setup** - uses your specific entity IDs and device capabilities  
 ✅ **Automatic backups** - every change is Git-versioned  
-✅ **Intelligent analysis** - understands your devices and entities  
+✅ **Intelligent debugging** - reads logs, finds issues, fixes them  
 ✅ **Error recovery** - can rollback if something goes wrong  
-✅ **Complete autonomy** - from analysis to deployment  
+✅ **End-to-end deployment** - from analysis to production  
 
-**No more manual copy-pasting YAML configs!** 🚀
+**Stop writing YAML manually! Just describe what you want.** 🚀
 
 ---
 

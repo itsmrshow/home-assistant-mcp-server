@@ -122,17 +122,7 @@ This add-on enables **Cursor AI to autonomously manage your Home Assistant** thr
 
 **New recommended way using Model Context Protocol (MCP):**
 
-#### 1. Install MCP Server
-
-Install the MCP package globally or use npx:
-
-```bash
-npm install -g @coolver/mcp-home-assistant
-```
-
-Or test without installation using npx (recommended).
-
-#### 2. Configure Cursor
+#### 1. Configure Cursor
 
 Add to your `~/.cursor/mcp.json`:
 
@@ -141,7 +131,7 @@ Add to your `~/.cursor/mcp.json`:
   "mcpServers": {
     "home-assistant": {
       "command": "npx",
-      "args": ["-y", "@coolver/mcp-home-assistant"],
+      "args": ["-y", "@coolver/mcp-home-assistant@latest"],
       "env": {
         "HA_AGENT_URL": "http://homeassistant.local:8099",
         "HA_TOKEN": "YOUR_LONG_LIVED_ACCESS_TOKEN"
@@ -151,31 +141,38 @@ Add to your `~/.cursor/mcp.json`:
 }
 ```
 
-**If installed globally:**
+**Why `@latest`?**
+- ✅ Automatic updates when Cursor restarts
+- ✅ Always get new features and bug fixes
+- ✅ No manual version management
 
+**Alternative options:**
+
+**Fixed version** (more stable):
 ```json
-{
-  "mcpServers": {
-    "home-assistant": {
-      "command": "mcp-home-assistant",
-      "env": {
-        "HA_AGENT_URL": "http://homeassistant.local:8099",
-        "HA_TOKEN": "YOUR_LONG_LIVED_ACCESS_TOKEN"
-      }
-    }
-  }
-}
+"args": ["-y", "@coolver/mcp-home-assistant@1.0.5"]
+```
+
+**Global install** (if you prefer):
+```bash
+npm install -g @coolver/mcp-home-assistant
+```
+Then use:
+```json
+"command": "mcp-home-assistant"
 ```
 
 **Replace:**
 - `YOUR_LONG_LIVED_ACCESS_TOKEN` - token from Step 4 above
 - `homeassistant.local` - with your HA IP if needed (e.g., `http://192.168.1.100:8099`)
 
-#### 3. Restart Cursor
+#### 2. Restart Cursor
 
 Restart Cursor AI to load the MCP configuration.
 
-#### 4. Start Using!
+**Note:** After restart, Cursor will download the latest version of MCP package automatically.
+
+#### 3. Start Using!
 
 Just talk to Cursor AI:
 

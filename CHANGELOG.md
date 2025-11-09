@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.6] - 2025-11-09
+
+### 🔍 Debug Enhancement
+
+**Enhanced Supervisor API Logging:**
+- ✅ Added detailed logging for Supervisor API requests
+- ✅ Log exact URL, headers, and token (preview) for each request
+- ✅ Added SupervisorClient initialization log in startup event
+
+**Purpose:**
+- Debug 403 Forbidden errors from Supervisor API
+- Verify correct URL format and authentication headers
+- Identify root cause of add-on management issues
+
+**Changes:**
+- app/main.py: added SupervisorClient logging in startup event
+- app/services/supervisor_client.py: enhanced request logging (INFO level)
+- Logs now show: URL, headers, token preview for debugging
+
 ## [2.3.5] - 2025-11-09
 
 ### 🐛 Bug Fixes

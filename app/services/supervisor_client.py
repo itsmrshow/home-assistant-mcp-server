@@ -39,7 +39,8 @@ class SupervisorClient:
         url = f"{self.base_url}/{endpoint}"
         
         token_preview = f"{self.token[:20]}..." if self.token else "EMPTY"
-        logger.debug(f"Supervisor API Request: {method} {url}, Token: {token_preview}")
+        logger.info(f"🔍 Supervisor API Request: {method} {url}")
+        logger.info(f"🔍 Headers: X-Supervisor-Token={token_preview}, Content-Type=application/json")
         
         try:
             async with aiohttp.ClientSession() as session:

@@ -23,7 +23,7 @@ LOG_LEVEL = os.getenv('LOG_LEVEL', 'info').upper()
 logger = setup_logger('ha_cursor_agent', LOG_LEVEL)
 
 # Agent version
-AGENT_VERSION = "2.3.5"
+AGENT_VERSION = "2.3.6"
 
 # FastAPI app
 app = FastAPI(
@@ -164,7 +164,13 @@ logger.info(f"=================================")
 # Startup and shutdown events
 @app.on_event("startup")
 async def startup_event():
-    """Initialize WebSocket client on startup"""
+    """Initialize WebSocket client and Supervisor client on startup"""
+    # Initialize Supervisor client (for add-on management)
+    if SUPERVISOR_TOKEN:
+        from app.services.supervisor_client import supervisor_client
+        token_preview = f"{SUPERVISOR_TOKEN[:20]}..." if SUPERVISOR_TOKEN else "EMPTY"
+        logger.info(f"✅ SupervisorClient ready - URL: {supervisor_client.base_url}, Token: {token_preview}")
+    
     # Only start WebSocket if we have SUPERVISOR_TOKEN (running as add-on)
     if SUPERVISOR_TOKEN:
         logger.info("Initializing WebSocket client...")

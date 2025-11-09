@@ -1,7 +1,7 @@
 ARG BUILD_FROM
 FROM ${BUILD_FROM}
 
-# Version: 2.3.5 - Fix Supervisor API authentication
+# Version: 2.3.6 - Enhanced Supervisor API logging
 # Install system dependencies
 RUN apk add --no-cache \
     git \

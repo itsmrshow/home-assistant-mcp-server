@@ -13,7 +13,7 @@ class SupervisorClient:
         self.base_url = os.getenv('SUPERVISOR_URL', 'http://supervisor')
         self.token = os.getenv('SUPERVISOR_TOKEN', '')
         self.headers = {
-            'Authorization': f'Bearer {self.token}',
+            'X-Supervisor-Token': self.token,
             'Content-Type': 'application/json',
         }
         

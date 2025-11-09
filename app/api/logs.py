@@ -8,7 +8,7 @@ from app.utils.logger import get_logs
 router = APIRouter()
 logger = logging.getLogger('ha_cursor_agent')
 
-@router.get("/")
+@router.get("")
 async def get_agent_logs(
     limit: int = Query(100, description="Number of log entries to return"),
     level: Optional[str] = Query(None, description="Filter by level: DEBUG, INFO, WARNING, ERROR")
@@ -19,9 +19,9 @@ async def get_agent_logs(
     Returns recent log entries from the agent
     
     **Examples:**
-    - `/api/logs/` - Last 100 log entries
-    - `/api/logs/?limit=50` - Last 50 entries
-    - `/api/logs/?level=ERROR` - Only errors
+    - `/api/logs` - Last 100 log entries
+    - `/api/logs?limit=50` - Last 50 entries
+    - `/api/logs?level=ERROR` - Only errors
     """
     try:
         logs = get_logs(limit=limit, level=level)

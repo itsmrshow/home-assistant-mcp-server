@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.5] - 2025-11-09
+
+### 🐛 Bug Fixes
+
+**1. Supervisor API Authentication Fix (Critical):**
+- ✅ Fixed authentication header for Supervisor API
+- ✅ Changed from `Authorization: Bearer {token}` to `X-Supervisor-Token: {token}`
+- ✅ All add-on management operations now authenticate correctly
+
+**What was wrong:**
+- Supervisor API uses custom `X-Supervisor-Token` header, not standard `Authorization: Bearer`
+- All requests were rejected with 403 Forbidden due to incorrect auth header
+- Home Assistant Supervisor API documentation specifies `X-Supervisor-Token` format
+
+**Impact:**
+- All add-on management endpoints now work correctly ✅
+- Authentication passes, full add-on lifecycle management functional
+- Fixes 403 Forbidden errors from v2.3.4
+
+**2. Logs Endpoint Redirect Fix:**
+- ✅ Fixed unnecessary 307 redirect for `/api/logs` endpoint
+- ✅ Changed `@router.get("/")` to `@router.get("")` in logs.py
+- ✅ Direct response without redirect
+
+**What was wrong:**
+- Endpoint was defined as `/api/logs/` (with trailing slash)
+- Requests to `/api/logs` caused 307 redirect to `/api/logs/`
+- FastAPI automatically redirects when trailing slash mismatch occurs
+
+**Impact:**
+- `/api/logs` now responds directly with 200 OK (no redirect)
+- Improved API performance and cleaner request logs
+
 ## [2.3.4] - 2025-11-09
 
 ### 🐛 Critical Bug Fix

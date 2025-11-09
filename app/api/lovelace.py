@@ -142,7 +142,7 @@ async def preview_current_dashboard():
         lovelace_path = "ui-lovelace.yaml"
         
         try:
-            content = file_manager.read_file(lovelace_path)
+            content = await file_manager.read_file(lovelace_path)
             config = yaml.safe_load(content)
             
             return Response(
@@ -200,7 +200,7 @@ async def apply_dashboard(request: ApplyDashboardRequest):
         
         # Write to ui-lovelace.yaml
         lovelace_path = "ui-lovelace.yaml"
-        file_manager.write_file(lovelace_path, dashboard_yaml)
+        await file_manager.write_file(lovelace_path, dashboard_yaml)
         
         logger.info(f"Dashboard applied to {lovelace_path}")
         
@@ -222,4 +222,5 @@ async def apply_dashboard(request: ApplyDashboardRequest):
     except Exception as e:
         logger.error(f"Error applying dashboard: {e}")
         return Response(success=False, message=f"Failed to apply dashboard: {str(e)}")
+
 

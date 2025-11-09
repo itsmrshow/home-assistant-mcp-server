@@ -344,3 +344,4 @@ class LovelaceGenerator:
 # Global Lovelace generator instance
 lovelace_generator = LovelaceGenerator()
 
+

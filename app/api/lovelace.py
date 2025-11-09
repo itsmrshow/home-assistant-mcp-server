@@ -32,40 +32,53 @@ async def _register_dashboard(filename: str, title: str, icon: str) -> bool:
     try:
         config_path = "configuration.yaml"
         
-        # Read current configuration
+        # Read current configuration as text (to preserve !include and other HA directives)
         config_content = await file_manager.read_file(config_path)
-        config = yaml.safe_load(config_content) or {}
-        
-        # Get or create lovelace section
-        if 'lovelace' not in config:
-            config['lovelace'] = {}
-        
-        # Ensure dashboards section exists
-        if 'dashboards' not in config['lovelace']:
-            config['lovelace']['dashboards'] = {}
         
         # Extract dashboard key from filename (remove .yaml)
         dashboard_key = filename.replace('.yaml', '').replace('.yml', '')
         
-        # Add dashboard configuration
-        config['lovelace']['dashboards'][dashboard_key] = {
-            'mode': 'yaml',
-            'title': title,
-            'icon': icon,
-            'filename': filename,
-            'show_in_sidebar': True
-        }
+        # Check if lovelace section exists
+        if 'lovelace:' not in config_content:
+            # Add lovelace section at the end
+            lovelace_config = f"\n# Lovelace Dashboards\nlovelace:\n  dashboards:\n    {dashboard_key}:\n      mode: yaml\n      title: {title}\n      icon: {icon}\n      filename: {filename}\n      show_in_sidebar: true\n"
+            new_config_content = config_content.rstrip() + "\n" + lovelace_config
+        else:
+            # Check if dashboards section exists
+            if f'  dashboards:' not in config_content:
+                # Add dashboards section under lovelace
+                import re
+                lovelace_match = re.search(r'(lovelace:)(\n)', config_content)
+                if lovelace_match:
+                    insert_pos = lovelace_match.end()
+                    dashboard_config = f"  dashboards:\n    {dashboard_key}:\n      mode: yaml\n      title: {title}\n      icon: {icon}\n      filename: {filename}\n      show_in_sidebar: true\n"
+                    new_config_content = config_content[:insert_pos] + dashboard_config + config_content[insert_pos:]
+                else:
+                    # Fallback: append at end
+                    dashboard_config = f"\n  dashboards:\n    {dashboard_key}:\n      mode: yaml\n      title: {title}\n      icon: {icon}\n      filename: {filename}\n      show_in_sidebar: true\n"
+                    new_config_content = config_content.rstrip() + "\n" + dashboard_config
+            else:
+                # Add dashboard to existing dashboards section
+                # Find the dashboards: line and add after it
+                import re
+                dashboards_match = re.search(r'(  dashboards:)(\n)', config_content)
+                if dashboards_match:
+                    insert_pos = dashboards_match.end()
+                    dashboard_config = f"    {dashboard_key}:\n      mode: yaml\n      title: {title}\n      icon: {icon}\n      filename: {filename}\n      show_in_sidebar: true\n"
+                    new_config_content = config_content[:insert_pos] + dashboard_config + config_content[insert_pos:]
+                else:
+                    logger.warning("Could not find dashboards section to insert into")
+                    return False
         
         # Write updated configuration
-        new_config_content = yaml.dump(config, default_flow_style=False, allow_unicode=True, sort_keys=False)
         await file_manager.write_file(config_path, new_config_content)
         
         logger.info(f"Dashboard '{dashboard_key}' registered in configuration.yaml")
         
         # Reload Lovelace configuration
         try:
-            await ha_client.reload_config('lovelace')
-            logger.info("Lovelace configuration reloaded")
+            await ha_client.reload_config('core')  # Need core reload for config changes
+            logger.info("Core configuration reloaded")
         except Exception as reload_error:
             logger.warning(f"Dashboard registered but reload failed (manual restart may be needed): {reload_error}")
         

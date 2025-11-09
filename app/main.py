@@ -70,7 +70,7 @@ async def send_notification(api_key: str):
                     'Content-Type': 'application/json'
                 },
                 json={
-                    'message': f'**HA Cursor Agent API Key Generated:**\n\n`{api_key}`\n\nAdd to `~/.cursor/mcp.json` or view in Sidebar → API Key',
+                    'message': f'**HA Cursor Agent - Agent Key Generated:**\n\n`{api_key}`\n\nView anytime: Settings → Add-ons → HA Cursor Agent → Open Web UI',
                     'title': '🔑 HA Cursor Agent API Key',
                     'notification_id': 'ha_cursor_agent_key'
                 },

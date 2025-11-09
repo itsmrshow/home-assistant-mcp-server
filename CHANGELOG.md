@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.2] - 2025-11-09
+
+### 🧠 AI Instructions Enhancement
+
+**Proactive HACS Installation**
+- ✅ Added comprehensive HACS section to AI Instructions
+- ✅ AI now proactively offers HACS installation when user requests custom integrations
+- ✅ Clear workflow: Check status → Offer installation → Guide through setup
+- ✅ Example scenarios and troubleshooting guide included
+
+**Impact:**
+- Better AI behavior - automatically suggests HACS when needed
+- Improved user experience - no need to manually discover HACS
+- Clear guidance on HACS installation and configuration flow
+
 ## [2.2.1] - 2025-11-09
 
 ### 🐛 Bug Fixes

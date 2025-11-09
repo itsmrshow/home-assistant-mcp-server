@@ -12,7 +12,7 @@ AI_INSTRUCTIONS = """
 HA CURSOR AGENT - INSTRUCTIONS FOR AI ASSISTANTS
 ================================================================================
 
-Version: 2.2.1
+Version: 2.2.2
 Base URL: http://homeassistant.local:8099
 Interactive Docs: http://homeassistant.local:8099/docs
 
@@ -244,6 +244,126 @@ If any operation fails:
 ✅ Give user control - ask before major changes
 ✅ Show file diffs when modifying YAML
 ✅ Validate YAML syntax before applying
+
+================================================================================
+📦 HACS (HOME ASSISTANT COMMUNITY STORE) MANAGEMENT
+================================================================================
+
+HACS provides access to 1000+ custom integrations, themes, and plugins for Home Assistant.
+
+## 🔍 WHEN USER MENTIONS HACS
+
+**If user asks about HACS features or wants to install something from HACS:**
+
+1. **ALWAYS check if HACS is installed first:**
+   ```
+   GET /api/hacs/status
+   ```
+
+2. **If HACS is NOT installed (success=true, installed=false):**
+   
+   ⚠️ **IMMEDIATELY offer to install it:**
+   
+   "HACS is not installed yet. Would you like me to install it? 
+   
+   HACS (Home Assistant Community Store) gives you access to 1000+ custom integrations, 
+   themes, and plugins that aren't in the default Home Assistant store.
+   
+   I can install it in one step:
+   POST /api/hacs/install
+   
+   After installation, you'll need to:
+   1. Restart Home Assistant
+   2. Complete HACS setup in the UI (add GitHub token)
+   
+   Should I proceed with installation?"
+
+3. **If HACS is installed:**
+   - Proceed with user's request (search, list repos, install integration, etc.)
+
+## 🚀 HACS WORKFLOW
+
+### Step 1: Check Status
+```
+GET /api/hacs/status
+```
+Response tells you if HACS is installed and configured.
+
+### Step 2: Install HACS (if needed)
+```
+POST /api/hacs/install
+```
+Downloads and installs HACS from GitHub.
+**Important:** User must restart Home Assistant and configure GitHub token in UI.
+
+### Step 3: Search for Integrations
+```
+GET /api/hacs/search?query=xiaomi&category=integration
+```
+Categories: integration, theme, plugin, appdaemon, netdaemon, python_script
+
+### Step 4: List Available Repositories
+```
+GET /api/hacs/repositories?category=integration
+```
+Shows all HACS repositories (only works if HACS is configured).
+
+### Step 5: Install Repository
+```
+POST /api/hacs/install_repository
+Body: {
+  "repository": "AlexxIT/XiaomiGateway3",
+  "category": "integration"
+}
+```
+
+### Step 6: Update All Repositories
+```
+POST /api/hacs/update_all
+```
+Updates all installed HACS repositories to latest versions.
+
+## 🎯 PROACTIVE HACS SUGGESTIONS
+
+**Offer HACS installation when user:**
+- Asks about integrations not in core HA
+- Wants custom components or themes
+- Mentions specific integration names you know are HACS-only
+- Asks "how do I install X" and X is available in HACS
+
+**Example scenarios:**
+
+User: "I want to integrate my Xiaomi gateway"
+You: "Let me check if HACS is installed... [check status]
+      HACS is not installed. I recommend installing it to access 
+      XiaomiGateway3 integration. Should I install HACS?"
+
+User: "How do I get better themes?"
+You: "HACS has hundreds of themes! Let me check if it's installed... 
+      [check status]. Not installed yet - want me to install HACS 
+      so you can browse themes?"
+
+## ⚠️ IMPORTANT NOTES
+
+1. **HACS requires WebSocket connection** - agent must be running in add-on mode
+2. **User must complete setup** - After HACS installation, user needs to:
+   - Restart Home Assistant
+   - Add GitHub Personal Access Token in HACS UI
+   - Refresh HACS repositories
+3. **Repository names** - Use format: "username/repo" (e.g., "AlexxIT/XiaomiGateway3")
+4. **After installing integration** - User must restart HA and add integration via UI
+
+## 🔧 TROUBLESHOOTING
+
+**If HACS endpoints return errors:**
+- Check WebSocket connection in logs
+- Verify HACS is properly configured in HA UI
+- Ensure user has completed HACS setup (GitHub token)
+
+**If installation fails:**
+- Check logs: GET /api/logs/?limit=20
+- Verify network access
+- Ensure /config/custom_components/ directory is writable
 
 ================================================================================
 🌡️ CLIMATE CONTROL SYSTEMS - CRITICAL EDGE CASES

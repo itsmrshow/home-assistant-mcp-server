@@ -2,11 +2,18 @@
 
 **Let AI build your Home Assistant automations - just describe what you want in natural language** 🏠🤖
 
-Stop manually writing YAML configurations! This add-on enables Cursor AI to analyze YOUR Home Assistant setup and autonomously create intelligent automations, scripts, and systems tailored to your specific devices.
+Transform your smart home management! This add-on enables Cursor AI to:
+- 📝 Analyze your Home Assistant configuration and devices
+- 🏗️ Create intelligent automations, scripts, and complete systems
+- 🔍 Monitor and troubleshoot your setup through log analysis
+- 📦 Install and manage HACS integrations
+- 🔄 Safely deploy changes with automatic Git versioning
+
+No more manual YAML editing or searching through documentation - just describe what you want in natural language!
 
 **Real example:** User says *"Install smart climate control"* → AI analyzes 7 TRVs, creates 10 automations + 9 helpers + 10 sensors + 5 scripts, deploys everything, and it just works!
 
-[![Version](https://img.shields.io/badge/version-2.2.1-blue.svg)](https://github.com/Coolver/home-assistant-cursor-agent)
+[![Version](https://img.shields.io/badge/version-2.2.2-blue.svg)](https://github.com/Coolver/home-assistant-cursor-agent)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![MCP Package](https://img.shields.io/npm/v/@coolver/mcp-home-assistant?label=MCP%20Package)](https://www.npmjs.com/package/@coolver/mcp-home-assistant)
 
@@ -39,24 +46,34 @@ Stop manually writing YAML configurations! This add-on enables Cursor AI to anal
 
 ## 🌟 Features
 
-### 📁 File Management
-- List, read, write, append, delete files
-- Automatic backup before modifications
-- YAML parsing and validation
-- Safe path handling (restricted to `/config`)
-
 ### 🏠 Home Assistant Integration
-- Full access to HA REST API
+- Full access to HA REST API and WebSocket
 - List all entities and their states
 - Call any HA service
 - Reload components (automations, scripts, templates)
 - Check configuration validity
+- Real-time state monitoring
+
+### 📦 HACS Management (NEW in v2.2.0!) 🔥
+**Complete HACS integration via WebSocket - browse 1000+ custom integrations!**
+- Install HACS automatically from GitHub
+- Search repositories by name, author, or category
+- Install integrations, themes, and plugins
+- Update all installed repositories
+- View repository details (stars, versions, authors)
+- Powered by persistent WebSocket connection
 
 ### 🔧 Component Management
 - Create/Delete Input Helpers (boolean, text, number, datetime, select)
 - Create/Delete Automations
 - Create/Delete Scripts
 - Automatic reload after changes
+
+### 📁 File Management
+- List, read, write, append, delete files
+- Automatic backup before modifications
+- YAML parsing and validation
+- Safe path handling (restricted to `/config`)
 
 ### 💾 Git Versioning
 - Automatic commit on every change
@@ -65,11 +82,12 @@ Stop manually writing YAML configurations! This add-on enables Cursor AI to anal
 - View diffs between versions
 - Commit messages for tracking
 
-### 📊 Monitoring
-- Agent logs API
+### 📊 Monitoring & Troubleshooting
+- Agent logs API with filtering
 - Operation history
 - Real-time status
 - Health check endpoint
+- System monitoring and analysis
 
 ---
 

@@ -45,6 +45,20 @@ async def _remove_dashboard_from_config(filename: str) -> bool:
         if re.search(pattern, config_content):
             new_config_content = re.sub(pattern, '', config_content)
             
+            # Check if dashboards section is now empty
+            # Pattern: "  dashboards:\n" followed by only whitespace or next section
+            if re.search(r'  dashboards:\s*\n(?=\S|\Z)', new_config_content):
+                # dashboards section is empty - remove it
+                new_config_content = re.sub(r'  dashboards:\s*\n', '', new_config_content)
+                logger.info("Removed empty dashboards: section")
+                
+                # Check if lovelace section is now empty
+                if re.search(r'lovelace:\s*\n(?=\S|\Z)', new_config_content):
+                    # Remove entire empty lovelace section
+                    new_config_content = re.sub(r'# Lovelace Dashboards\s*\nlovelace:\s*\n', '', new_config_content)
+                    new_config_content = re.sub(r'\nlovelace:\s*\n(?=\S|\Z)', '\n', new_config_content)
+                    logger.info("Removed empty lovelace: section")
+            
             # Write updated configuration
             await file_manager.write_file(config_path, new_config_content)
             logger.info(f"Dashboard '{dashboard_key}' removed from configuration.yaml")

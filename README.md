@@ -6,7 +6,7 @@ Stop manually writing YAML configurations! This add-on enables Cursor AI to anal
 
 **Real example:** User says *"Install smart climate control"* → AI analyzes 7 TRVs, creates 10 automations + 9 helpers + 10 sensors + 5 scripts, deploys everything, and it just works!
 
-[![Version](https://img.shields.io/badge/version-1.0.15-blue.svg)](https://github.com/Coolver/home-assistant-cursor-agent)
+[![Version](https://img.shields.io/badge/version-1.0.16-blue.svg)](https://github.com/Coolver/home-assistant-cursor-agent)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![MCP Package](https://img.shields.io/npm/v/@coolver/mcp-home-assistant?label=MCP%20Package)](https://www.npmjs.com/package/@coolver/mcp-home-assistant)
 
@@ -126,15 +126,19 @@ This add-on enables **Cursor AI to autonomously manage your Home Assistant** thr
 
 **New recommended way using Model Context Protocol (MCP):**
 
-#### 1. Get Your API Key
+#### 1. Get Your Configuration
 
-Open Home Assistant Sidebar → **🔑 API Key** → Copy your key
+Open Home Assistant Sidebar → **🔑 API Key** → Click **"Copy Configuration to Clipboard"**
 
-(Or check add-on Logs on first start)
+#### 2. Add to Cursor
 
-#### 2. Configure Cursor
+1. Open Cursor → **Settings**
+2. Go to **Tools & MCP**
+3. Click **New MCP Server**
+4. Click **Add a Custom MCP Server**
+5. Paste the configuration you copied
 
-Add to your `~/.cursor/mcp.json`:
+Or manually edit `~/.cursor/mcp.json`:
 
 ```json
 {

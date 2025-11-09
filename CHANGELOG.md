@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.16] - 2025-11-08
+
+### Changed
+- **Updated setup instructions** - now use Cursor Settings UI instead of manual file editing
+  - Primary method: Settings → Tools & MCP → New MCP Server → Add Custom MCP Server
+  - Manual file editing as alternative (for advanced users)
+  - Clearer, more user-friendly workflow
+  - Aligned with official Cursor MCP setup process
+
 ## [1.0.15] - 2025-11-08
 
 ### Fixed

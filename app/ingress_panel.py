@@ -369,16 +369,16 @@ def generate_ingress_html(api_key: str, agent_version: str) -> str:
                 <div class="step">
                     <div class="step-number">1</div>
                     <div class="step-content">
-                        <h3>Open configuration file</h3>
-                        <p>Create or edit <code>~/.cursor/mcp.json</code></p>
+                        <h3>Open Cursor Settings</h3>
+                        <p><strong>Settings</strong> → <strong>Tools & MCP</strong> → <strong>New MCP Server</strong></p>
                     </div>
                 </div>
                 
                 <div class="step">
                     <div class="step-number">2</div>
                     <div class="step-content">
-                        <h3>Paste configuration</h3>
-                        <p>Replace the entire content with the JSON you copied above</p>
+                        <h3>Add Custom MCP Server</h3>
+                        <p>Click <strong>Add a Custom MCP Server</strong> and paste the JSON configuration you copied above</p>
                     </div>
                 </div>
                 
@@ -386,7 +386,7 @@ def generate_ingress_html(api_key: str, agent_version: str) -> str:
                     <div class="step-number">3</div>
                     <div class="step-content">
                         <h3>Restart Cursor</h3>
-                        <p>Fully quit and reopen Cursor (Cmd+Q on Mac, close window on Windows)</p>
+                        <p>Fully quit and reopen Cursor (Cmd+Q on Mac, Alt+F4 on Windows)</p>
                     </div>
                 </div>
                 

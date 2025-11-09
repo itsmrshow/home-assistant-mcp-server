@@ -1,7 +1,7 @@
 ARG BUILD_FROM
 FROM ${BUILD_FROM}
 
-# Version: 2.3.9 - Enhanced AI Instructions for add-on management
+# Version: 2.3.10 - Fix installed add-ons detection logic
 # Install system dependencies
 RUN apk add --no-cache \
     git \

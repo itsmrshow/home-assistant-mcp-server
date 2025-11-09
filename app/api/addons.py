@@ -40,8 +40,9 @@ async def list_available_addons():
         addons = result.get('data', {}).get('addons', [])
         
         # Separate installed and available
-        installed = [a for a in addons if a.get('installed')]
-        available = [a for a in addons if not a.get('installed')]
+        # An add-on is installed if it has a 'version' field (current installed version)
+        installed = [a for a in addons if a.get('version')]
+        available = [a for a in addons if not a.get('version')]
         
         return Response(
             success=True,
@@ -71,7 +72,8 @@ async def list_installed_addons():
         result = await supervisor.list_addons()
         
         addons = result.get('data', {}).get('addons', [])
-        installed = [a for a in addons if a.get('installed')]
+        # An add-on is installed if it has a 'version' field (current installed version)
+        installed = [a for a in addons if a.get('version')]
         
         return Response(
             success=True,

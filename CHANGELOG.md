@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.10] - 2025-11-09
+
+### 🐛 Bug Fix
+
+**Fixed Installed Add-ons Detection Logic:**
+- ✅ Changed detection from `a.get('installed')` to `a.get('version')`
+- ✅ Supervisor API returns `version` field for installed add-ons
+- ✅ Field `installed` is not always present in response
+
+**What was wrong:**
+- Logic checked for `installed` field: `if a.get('installed')`
+- Supervisor API doesn't always include this field
+- Installed add-ons have `version` field (current installed version)
+- Available (not installed) add-ons only have `version_latest`
+
+**Impact:**
+- `/api/addons/available` now correctly separates installed vs available
+- `/api/addons/installed` now shows actual installed add-ons
+- AI can see which add-ons are already installed
+
+**Changes:**
+- app/api/addons.py: changed filter logic in both endpoints
+  - `list_available_addons()`: uses `version` to detect installed
+  - `list_installed_addons()`: uses `version` to detect installed
+
 ## [2.3.9] - 2025-11-09
 
 ### 📚 Enhanced AI Instructions

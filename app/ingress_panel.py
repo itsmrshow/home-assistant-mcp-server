@@ -130,6 +130,20 @@ def generate_ingress_html(api_key: str, agent_version: str) -> str:
                 transform: translateY(0);
             }}
             
+            .copy-btn.copied {{
+                background: #2ea043;
+                animation: pulse 0.3s ease;
+            }}
+            
+            @keyframes pulse {{
+                0%, 100% {{
+                    transform: scale(1);
+                }}
+                50% {{
+                    transform: scale(1.02);
+                }}
+            }}
+            
             .step {{
                 display: flex;
                 gap: 16px;
@@ -277,16 +291,19 @@ def generate_ingress_html(api_key: str, agent_version: str) -> str:
             
             .success-message {{
                 position: fixed;
-                top: 20px;
-                right: 20px;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
                 background: #238636;
                 color: white;
-                padding: 14px 20px;
-                border-radius: 6px;
-                box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+                padding: 20px 32px;
+                border-radius: 8px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.6);
                 display: none;
-                animation: slideIn 0.3s ease;
+                animation: popIn 0.3s ease;
                 z-index: 1000;
+                font-size: 18px;
+                font-weight: 600;
             }}
             
             @keyframes slideIn {{
@@ -296,6 +313,17 @@ def generate_ingress_html(api_key: str, agent_version: str) -> str:
                 }}
                 to {{
                     transform: translateX(0);
+                    opacity: 1;
+                }}
+            }}
+            
+            @keyframes popIn {{
+                0% {{
+                    transform: translate(-50%, -50%) scale(0.8);
+                    opacity: 0;
+                }}
+                100% {{
+                    transform: translate(-50%, -50%) scale(1);
                     opacity: 1;
                 }}
             }}
@@ -326,8 +354,8 @@ def generate_ingress_html(api_key: str, agent_version: str) -> str:
                     <pre id="configText">{json_config}</pre>
                 </div>
                 
-                <button class="copy-btn" onclick="copyConfig()">
-                    📋 Copy Configuration to Clipboard
+                <button class="copy-btn" id="copyBtn" onclick="copyConfig()">
+                    <span id="copyBtnIcon">📋</span> <span id="copyBtnText">Copy Configuration to Clipboard</span>
                 </button>
             </div>
             
@@ -420,7 +448,7 @@ def generate_ingress_html(api_key: str, agent_version: str) -> str:
         </div>
         
         <div class="success-message" id="successMessage">
-            ✅ Configuration copied to clipboard!
+            ✅ Copied to Clipboard!
         </div>
         
         <script>
@@ -430,10 +458,36 @@ def generate_ingress_html(api_key: str, agent_version: str) -> str:
             let keyVisible = false;
             
             function copyConfig() {{
+                const btn = document.getElementById('copyBtn');
+                const btnIcon = document.getElementById('copyBtnIcon');
+                const btnText = document.getElementById('copyBtnText');
+                
                 navigator.clipboard.writeText(fullConfig).then(() => {{
+                    // Change button appearance
+                    btn.classList.add('copied');
+                    btnIcon.textContent = '✅';
+                    btnText.textContent = 'Copied!';
+                    
+                    // Show center popup
                     showSuccess();
+                    
+                    // Reset button after 2 seconds
+                    setTimeout(() => {{
+                        btn.classList.remove('copied');
+                        btnIcon.textContent = '📋';
+                        btnText.textContent = 'Copy Configuration to Clipboard';
+                    }}, 2000);
                 }}).catch(err => {{
+                    // Error state
+                    btnIcon.textContent = '❌';
+                    btnText.textContent = 'Failed to copy';
                     alert('Failed to copy: ' + err);
+                    
+                    // Reset after 3 seconds
+                    setTimeout(() => {{
+                        btnIcon.textContent = '📋';
+                        btnText.textContent = 'Copy Configuration to Clipboard';
+                    }}, 3000);
                 }});
             }}
             
@@ -442,7 +496,7 @@ def generate_ingress_html(api_key: str, agent_version: str) -> str:
                 message.style.display = 'block';
                 setTimeout(() => {{
                     message.style.display = 'none';
-                }}, 3000);
+                }}, 2000);
             }}
             
             function toggleAdvanced() {{

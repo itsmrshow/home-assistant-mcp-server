@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.13] - 2025-11-08
+
+### Improved
+- **Copy button feedback** - better visual confirmation when copying
+  - Button changes to "✅ Copied!" for 2 seconds
+  - Button pulses on click
+  - Center popup notification
+  - Clear success/error states
+
+### Fixed
+- Copy button now has clear visual feedback (was not obvious before)
+
 ## [1.0.12] - 2025-11-08
 
 ### Changed

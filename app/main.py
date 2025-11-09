@@ -7,7 +7,7 @@ import logging
 import aiohttp
 import secrets
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, Depends, Security
+from fastapi import FastAPI, HTTPException, Depends, Security, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse
@@ -23,7 +23,7 @@ LOG_LEVEL = os.getenv('LOG_LEVEL', 'info').upper()
 logger = setup_logger('ha_cursor_agent', LOG_LEVEL)
 
 # Agent version
-AGENT_VERSION = "2.3.12"
+AGENT_VERSION = "2.3.13"
 
 # FastAPI app
 app = FastAPI(
@@ -42,6 +42,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Track MCP client versions (to avoid logging on every request)
+mcp_clients_logged = set()
+
+# Middleware to log MCP client version
+@app.middleware("http")
+async def log_mcp_client_version(request: Request, call_next):
+    """Log MCP client version on first request"""
+    mcp_version = request.headers.get('x-mcp-client-version')
+    client_id = request.client.host if request.client else 'unknown'
+    
+    # Log only once per client
+    if mcp_version and client_id not in mcp_clients_logged:
+        mcp_clients_logged.add(client_id)
+        logger.info(f"🔌 MCP Client connected: v{mcp_version} from {client_id}")
+    
+    response = await call_next(request)
+    return response
 
 # Get tokens and configuration from environment
 SUPERVISOR_TOKEN = os.getenv('SUPERVISOR_TOKEN', '')  # Auto-provided by HA when running as add-on

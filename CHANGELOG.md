@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.2] - 2025-11-09
+
+### 🔧 Build Fix
+
+**Force Docker Rebuild:**
+- ✅ Added version comment to `Dockerfile` to break Docker cache
+- ✅ Ensures all new files (addons.py, supervisor_client.py) are included in build
+- ✅ Fixes 404 error for add-on management endpoints
+
+**Why this fix:**
+- Home Assistant was using cached Docker image from v2.3.0
+- New files weren't being copied into the container
+- Cache-busting comment forces full rebuild
+
 ## [2.3.1] - 2025-11-09
 
 ### 🐛 Bug Fix

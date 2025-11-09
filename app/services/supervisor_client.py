@@ -256,3 +256,4 @@ async def get_supervisor_client() -> SupervisorClient:
         raise Exception("Supervisor API not available - agent must run as Home Assistant add-on for add-on management")
     return supervisor_client
 
+

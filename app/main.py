@@ -23,7 +23,7 @@ LOG_LEVEL = os.getenv('LOG_LEVEL', 'info').upper()
 logger = setup_logger('ha_cursor_agent', LOG_LEVEL)
 
 # Agent version
-AGENT_VERSION = "2.3.1"
+AGENT_VERSION = "2.3.2"
 
 # FastAPI app
 app = FastAPI(
@@ -149,10 +149,13 @@ logger.info(f"=================================")
 logger.info(f"HA Cursor Agent v{AGENT_VERSION}")
 logger.info(f"=================================")
 logger.info(f"SUPERVISOR_TOKEN: {supervisor_token_status}")
-logger.info(f"DEV_TOKEN (HA_AGENT_KEY): {dev_token_status}")
+if SUPERVISOR_TOKEN:
+    logger.info(f"Mode: Add-on (using SUPERVISOR_TOKEN for HA API)")
+else:
+    logger.info(f"DEV_TOKEN (for local dev): {dev_token_status}")
+    logger.info(f"Mode: Development (using DEV_TOKEN)")
 logger.info(f"HA_URL: {HA_URL}")
-logger.info(f"Mode: {'Add-on (using SUPERVISOR_TOKEN for HA API)' if SUPERVISOR_TOKEN else 'Development (using DEV_TOKEN)'}")
-logger.info(f"API Key: {'Custom (from config)' if API_KEY_FROM_CONFIG else 'Auto-generated'}")
+logger.info(f"API Key (for MCP client): {'Custom (from config)' if API_KEY_FROM_CONFIG else 'Auto-generated'}")
 logger.info(f"=================================")
 
 # Note: Notification logic is handled inside get_or_generate_api_key() function

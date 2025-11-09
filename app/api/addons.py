@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from typing import Optional, Dict, Any
 import logging
 
-from app.models import Response
+from app.models.schemas import Response
 from app.auth import verify_token
 from app.services.supervisor_client import get_supervisor_client
 

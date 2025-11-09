@@ -12,7 +12,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse
 
-from app.api import files, entities, helpers, automations, scripts, system, backup, logs, ai_instructions
+from app.api import files, entities, helpers, automations, scripts, system, backup, logs, ai_instructions, hacs
 from app.utils.logger import setup_logger
 from app.ingress_panel import generate_ingress_html
 
@@ -21,7 +21,7 @@ LOG_LEVEL = os.getenv('LOG_LEVEL', 'info').upper()
 logger = setup_logger('ha_cursor_agent', LOG_LEVEL)
 
 # Agent version
-AGENT_VERSION = "2.0.1"
+AGENT_VERSION = "2.1.0"
 
 # FastAPI app
 app = FastAPI(
@@ -200,6 +200,7 @@ app.include_router(scripts.router, prefix="/api/scripts", tags=["Scripts"], depe
 app.include_router(system.router, prefix="/api/system", tags=["System"], dependencies=[Depends(verify_token)])
 app.include_router(backup.router, prefix="/api/backup", tags=["Backup"], dependencies=[Depends(verify_token)])
 app.include_router(logs.router, prefix="/api/logs", tags=["Logs"], dependencies=[Depends(verify_token)])
+app.include_router(hacs.router, prefix="/api/hacs", tags=["HACS"])
 app.include_router(ai_instructions.router, prefix="/api/ai")
 
 

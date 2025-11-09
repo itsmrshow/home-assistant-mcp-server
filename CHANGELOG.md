@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2025-11-09
+
+### ✨ NEW: HACS Support
+
+**One-Click HACS Installation** - AI can now install and manage HACS!
+
+Added HACS API endpoints:
+- `POST /api/hacs/install` - Download and install HACS from GitHub
+- `GET /api/hacs/status` - Check if HACS is installed
+- `GET /api/hacs/repositories` - List available HACS repositories
+- `POST /api/hacs/install_repository` - Install integration/theme/plugin from HACS
+
+**Features:**
+- ✅ Automatic HACS installation from latest GitHub release
+- ✅ Version detection
+- ✅ Auto-restart after installation
+- ✅ Repository management (coming soon - requires HACS WebSocket API)
+
+**Usage:**
+```
+User: "Install HACS"
+AI: Downloads → Installs → Restarts HA → Done! ✅
+```
+
+**Note:** Repository listing and installation will be enhanced in next version with WebSocket API integration.
+
 ## [2.0.1] - 2025-11-09
 
 ### Fixed

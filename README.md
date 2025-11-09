@@ -105,10 +105,28 @@ Stop manually writing YAML configurations! This add-on enables Cursor AI to anal
 2. Go to **Settings** (Cmd/Ctrl + ,)
 3. Click **Tools & MCP** in the sidebar
 4. Click **New MCP Server**
-5. Click **Add a Custom MCP Server**
-6. **Paste** the configuration you copied
-7. Click **Save**
-8. **Restart Cursor** completely (Cmd/Ctrl + Q and reopen)
+5. **Paste** the configuration you copied
+6. Click **Save**
+7. **Restart Cursor** completely (Cmd/Ctrl + Q and reopen)
+
+**For reference, here's what the configuration looks like:**
+
+```json
+{
+  "mcpServers": {
+    "home-assistant": {
+      "command": "npx",
+      "args": ["-y", "@coolver/mcp-home-assistant@latest"],
+      "env": {
+        "HA_AGENT_URL": "http://homeassistant.local:8099",
+        "HA_AGENT_KEY": "YOUR_API_KEY_HERE"
+      }
+    }
+  }
+}
+```
+
+**Note:** The Web UI provides this exact configuration ready to copy - no need to type it manually!
 
 Done! Cursor AI is now connected to your Home Assistant 🎉
 
@@ -121,12 +139,11 @@ Open Cursor and send this message to AI:
 Connect to my Home Assistant and show me:
 1. List of all my climate entities
 2. Current status of the HA Cursor Agent
-3. Last 5 changes from Git history
 
 This will verify the MCP connection is working.
 ```
 
-If AI successfully returns information about your entities and shows Git history, everything is working! ✅
+If AI successfully returns your entities and agent status, everything is working! ✅
 
 **Troubleshooting:** If connection fails, check:
 - Add-on is running in Home Assistant
@@ -150,29 +167,6 @@ This add-on enables **Cursor AI to autonomously manage your Home Assistant** thr
 - 📖 **Verify syntax and compatibility** with your Home Assistant version
 
 **Use at your own risk. The automatic backup system minimizes risk but doesn't eliminate it.**
-
-### How to Connect Cursor AI (MCP)
-
-If you followed the **Quick Start** above, you're already connected! ✅
-
-**For reference, here's what the configuration looks like:**
-
-```json
-{
-  "mcpServers": {
-    "home-assistant": {
-      "command": "npx",
-      "args": ["-y", "@coolver/mcp-home-assistant@latest"],
-      "env": {
-        "HA_AGENT_URL": "http://homeassistant.local:8099",
-        "HA_AGENT_KEY": "YOUR_API_KEY_HERE"
-      }
-    }
-  }
-}
-```
-
-**Note:** The Web UI provides this exact configuration ready to copy - no need to type it manually!
 
 ### Start Using
 

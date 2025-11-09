@@ -6,9 +6,11 @@ import zipfile
 import io
 import os
 from pathlib import Path
+from typing import Optional
 
 from app.models.schemas import Response
 from app.services.ha_client import ha_client
+from app.services.ha_websocket import get_ws_client
 from app.main import verify_token
 
 router = APIRouter()
@@ -149,38 +151,63 @@ async def get_hacs_status():
 
 
 @router.get("/repositories", response_model=Response, dependencies=[Depends(verify_token)])
-async def list_hacs_repositories():
+async def list_hacs_repositories(category: Optional[str] = None):
     """
-    List HACS repositories (integrations, themes, plugins)
+    List HACS repositories via WebSocket
     
-    **Note:** This requires HACS to be installed and Home Assistant restarted.
-    HACS must be configured via UI first.
+    **Parameters:**
+    - category: Filter by category (integration, plugin, theme, appdaemon, netdaemon, python_script)
+    
+    **Note:** Requires HACS to be installed and configured via UI first.
     """
     try:
-        logger.info("Listing HACS repositories...")
+        logger.info(f"Listing HACS repositories (category: {category or 'all'})...")
         
         # Check if HACS is installed
         hacs_path = Path(HACS_INSTALL_PATH)
         if not hacs_path.exists():
             raise HTTPException(
-                status_code=400, 
+                status_code=400,
                 detail="HACS is not installed. Please install HACS first using /api/hacs/install"
             )
         
-        # Try to get HACS data via Home Assistant websocket API
-        # This is a placeholder - actual implementation would use HA WebSocket API
-        # to call HACS services
+        # Get WebSocket client
+        ws_client = await get_ws_client()
+        
+        # Get all states to find HACS data
+        states = await ws_client.get_states()
+        
+        # Filter HACS sensor entities
+        hacs_repos = []
+        for state in states:
+            entity_id = state.get('entity_id', '')
+            
+            # HACS creates sensors for each repository
+            if entity_id.startswith('sensor.hacs_'):
+                attributes = state.get('attributes', {})
+                repo_category = attributes.get('category', '')
+                
+                # Filter by category if specified
+                if category is None or repo_category == category:
+                    hacs_repos.append({
+                        'entity_id': entity_id,
+                        'name': attributes.get('friendly_name', ''),
+                        'category': repo_category,
+                        'installed': attributes.get('installed', False),
+                        'available_version': attributes.get('available_version'),
+                        'installed_version': attributes.get('installed_version'),
+                        'repository': attributes.get('repository', ''),
+                    })
+        
+        logger.info(f"Found {len(hacs_repos)} HACS repositories")
         
         return Response(
             success=True,
-            message="HACS repositories list",
+            message=f"Found {len(hacs_repos)} HACS repositories",
             data={
-                "note": "Repository listing requires HACS WebSocket API integration",
-                "status": "not_yet_implemented",
-                "next_steps": [
-                    "Configure HACS in Home Assistant UI",
-                    "HACS will then be accessible via HA services"
-                ]
+                'repositories': hacs_repos,
+                'count': len(hacs_repos),
+                'category': category or 'all'
             }
         )
         
@@ -192,13 +219,17 @@ async def list_hacs_repositories():
 @router.post("/install_repository", response_model=Response, dependencies=[Depends(verify_token)])
 async def install_hacs_repository(repository: str, category: str = "integration"):
     """
-    Install a repository from HACS
+    Install a repository from HACS via WebSocket
     
     **Parameters:**
-    - repository: Repository name (e.g., "hacs/integration")
-    - category: Type of repository (integration, theme, plugin)
+    - repository: Repository name (e.g., "AlexxIT/XiaomiGateway3")
+    - category: Type of repository (integration, theme, plugin, appdaemon, netdaemon, python_script)
     
-    **Note:** This requires HACS to be fully configured.
+    **Note:** Requires HACS to be installed and configured via UI first.
+    
+    **⚠️ Important:** 
+    - Home Assistant may need to be restarted after installation
+    - For integrations, configuration may be needed via UI
     """
     try:
         logger.info(f"Installing HACS repository: {repository} (category: {category})")
@@ -208,24 +239,239 @@ async def install_hacs_repository(repository: str, category: str = "integration"
         if not hacs_path.exists():
             raise HTTPException(
                 status_code=400,
-                detail="HACS is not installed. Please install HACS first."
+                detail="HACS is not installed. Please install HACS first using /api/hacs/install"
             )
         
-        # This would use HACS services via Home Assistant
-        # Placeholder for now
+        # Get WebSocket client
+        ws_client = await get_ws_client()
+        
+        # Call HACS download service via WebSocket
+        logger.info(f"Calling hacs/download service for {repository}...")
+        
+        result = await ws_client.call_service(
+            domain='hacs',
+            service='download',
+            service_data={
+                'repository': repository
+            }
+        )
+        
+        logger.info(f"✅ HACS repository installed: {repository}")
+        
+        # Determine if restart needed
+        restart_needed = category in ['integration', 'python_script']
         
         return Response(
             success=True,
-            message=f"Repository installation initiated: {repository}",
+            message=f"Repository installed: {repository}",
             data={
-                "repository": repository,
-                "category": category,
-                "status": "not_yet_implemented",
-                "note": "Requires HACS WebSocket API integration"
+                'repository': repository,
+                'category': category,
+                'installed': True,
+                'restart_needed': restart_needed,
+                'next_steps': [
+                    'Restart Home Assistant if installing integration' if restart_needed else 'Repository ready to use',
+                    'Configure integration in HA UI if needed'
+                ]
             }
         )
         
     except Exception as e:
-        logger.error(f"Failed to install HACS repository: {e}")
+        error_msg = str(e)
+        logger.error(f"Failed to install HACS repository: {error_msg}")
+        
+        # Provide helpful error messages
+        if 'not connected' in error_msg.lower():
+            raise HTTPException(
+                status_code=503,
+                detail="WebSocket not connected. Agent may still be starting up. Wait a few seconds and try again."
+            )
+        elif 'not found' in error_msg.lower() or 'unknown service' in error_msg.lower():
+            raise HTTPException(
+                status_code=400,
+                detail="HACS service not found. Please configure HACS in Home Assistant UI first: Settings → Devices & Services → HACS"
+            )
+        else:
+            raise HTTPException(status_code=500, detail=error_msg)
+
+
+@router.get("/search", response_model=Response, dependencies=[Depends(verify_token)])
+async def search_hacs_repositories(query: str, category: Optional[str] = None):
+    """
+    Search HACS repositories via WebSocket
+    
+    **Parameters:**
+    - query: Search query (repository name, author, description)
+    - category: Filter by category (optional)
+    
+    **Returns:**
+    Matching repositories with details
+    """
+    try:
+        logger.info(f"Searching HACS repositories: '{query}' (category: {category or 'all'})")
+        
+        # Get WebSocket client
+        ws_client = await get_ws_client()
+        
+        # Get all states
+        states = await ws_client.get_states()
+        
+        # Search in HACS sensors
+        matching_repos = []
+        query_lower = query.lower()
+        
+        for state in states:
+            entity_id = state.get('entity_id', '')
+            
+            if entity_id.startswith('sensor.hacs_'):
+                attributes = state.get('attributes', {})
+                repo_category = attributes.get('category', '')
+                repo_name = attributes.get('friendly_name', '')
+                repo_id = attributes.get('repository', '')
+                repo_description = attributes.get('description', '')
+                
+                # Filter by category
+                if category and repo_category != category:
+                    continue
+                
+                # Search in name, repository, or description
+                if (query_lower in repo_name.lower() or 
+                    query_lower in repo_id.lower() or 
+                    query_lower in repo_description.lower()):
+                    
+                    matching_repos.append({
+                        'entity_id': entity_id,
+                        'name': repo_name,
+                        'repository': repo_id,
+                        'category': repo_category,
+                        'description': repo_description,
+                        'installed': attributes.get('installed', False),
+                        'available_version': attributes.get('available_version'),
+                        'installed_version': attributes.get('installed_version'),
+                        'stars': attributes.get('stars', 0),
+                        'authors': attributes.get('authors', []),
+                    })
+        
+        logger.info(f"Found {len(matching_repos)} matching repositories")
+        
+        return Response(
+            success=True,
+            message=f"Found {len(matching_repos)} repositories matching '{query}'",
+            data={
+                'repositories': matching_repos,
+                'count': len(matching_repos),
+                'query': query,
+                'category': category or 'all'
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Failed to search HACS repositories: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/update_all", response_model=Response, dependencies=[Depends(verify_token)])
+async def update_all_hacs():
+    """
+    Update all HACS repositories to latest versions
+    
+    **⚠️ Warning:** This will update all installed HACS integrations.
+    Restart may be required after updates.
+    """
+    try:
+        logger.info("Updating all HACS repositories...")
+        
+        # Get WebSocket client
+        ws_client = await get_ws_client()
+        
+        # Call HACS update_all service
+        result = await ws_client.call_service(
+            domain='hacs',
+            service='update_all',
+            service_data={}
+        )
+        
+        logger.info("✅ HACS update initiated for all repositories")
+        
+        return Response(
+            success=True,
+            message="All HACS repositories update initiated",
+            data={
+                'result': result,
+                'restart_needed': True,
+                'next_steps': [
+                    'Wait for downloads to complete',
+                    'Restart Home Assistant to apply updates',
+                    'Check logs for any errors'
+                ]
+            }
+        )
+        
+    except Exception as e:
+        logger.error(f"Failed to update HACS repositories: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/repository/{repository_id}", response_model=Response, dependencies=[Depends(verify_token)])
+async def get_hacs_repository_details(repository_id: str):
+    """
+    Get detailed information about a specific HACS repository
+    
+    **Parameters:**
+    - repository_id: Repository identifier (e.g., "123456789" or "author/repo")
+    
+    **Returns:**
+    Detailed repository information
+    """
+    try:
+        logger.info(f"Getting HACS repository details: {repository_id}")
+        
+        # Get WebSocket client
+        ws_client = await get_ws_client()
+        
+        # Get all states
+        states = await ws_client.get_states()
+        
+        # Find matching repository
+        for state in states:
+            entity_id = state.get('entity_id', '')
+            
+            if entity_id.startswith('sensor.hacs_'):
+                attributes = state.get('attributes', {})
+                repo = attributes.get('repository', '')
+                
+                # Match by repository name or entity_id
+                if repository_id in entity_id or repository_id in repo:
+                    return Response(
+                        success=True,
+                        message=f"Repository details: {repo}",
+                        data={
+                            'entity_id': entity_id,
+                            'repository': repo,
+                            'name': attributes.get('friendly_name', ''),
+                            'category': attributes.get('category', ''),
+                            'description': attributes.get('description', ''),
+                            'installed': attributes.get('installed', False),
+                            'available_version': attributes.get('available_version'),
+                            'installed_version': attributes.get('installed_version'),
+                            'stars': attributes.get('stars', 0),
+                            'authors': attributes.get('authors', []),
+                            'downloads': attributes.get('downloads', 0),
+                            'last_updated': attributes.get('last_updated'),
+                            'topics': attributes.get('topics', []),
+                            'state': state.get('state'),
+                        }
+                    )
+        
+        # Not found
+        raise HTTPException(
+            status_code=404,
+            detail=f"Repository not found: {repository_id}. Make sure HACS is configured and repository exists."
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get repository details: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 

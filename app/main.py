@@ -15,13 +15,14 @@ from fastapi.responses import JSONResponse, HTMLResponse
 from app.api import files, entities, helpers, automations, scripts, system, backup, logs, ai_instructions, hacs
 from app.utils.logger import setup_logger
 from app.ingress_panel import generate_ingress_html
+from app.services import ha_websocket
 
 # Setup logging
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'info').upper()
 logger = setup_logger('ha_cursor_agent', LOG_LEVEL)
 
 # Agent version
-AGENT_VERSION = "2.1.0"
+AGENT_VERSION = "2.2.0"
 
 # FastAPI app
 app = FastAPI(
@@ -156,6 +157,32 @@ logger.info(f"API Key: {'Custom (from config)' if API_KEY_FROM_CONFIG else 'Auto
 logger.info(f"=================================")
 
 # Note: Notification logic is handled inside get_or_generate_api_key() function
+
+
+# Startup and shutdown events
+@app.on_event("startup")
+async def startup_event():
+    """Initialize WebSocket client on startup"""
+    # Only start WebSocket if we have SUPERVISOR_TOKEN (running as add-on)
+    if SUPERVISOR_TOKEN:
+        logger.info("Initializing WebSocket client...")
+        ha_websocket.ha_ws_client = ha_websocket.HAWebSocketClient(
+            url=HA_URL,
+            token=SUPERVISOR_TOKEN
+        )
+        await ha_websocket.ha_ws_client.start()
+        logger.info("✅ WebSocket client started in background")
+    else:
+        logger.warning("⚠️ WebSocket client disabled (no SUPERVISOR_TOKEN - dev mode)")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Stop WebSocket client on shutdown"""
+    if ha_websocket.ha_ws_client:
+        logger.info("Stopping WebSocket client...")
+        await ha_websocket.ha_ws_client.stop()
+        logger.info("✅ WebSocket client stopped")
 
 
 async def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)):

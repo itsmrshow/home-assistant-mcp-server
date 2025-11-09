@@ -2,31 +2,74 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.1.0] - 2025-11-09
+## [2.2.0] - 2025-11-09
 
-### ✨ NEW: HACS Support
+### 🚀 MAJOR: Full HACS Support with WebSocket
 
-**One-Click HACS Installation** - AI can now install and manage HACS!
+**Complete HACS Management** - Browse, search, and install 1000+ integrations!
 
-Added HACS API endpoints:
-- `POST /api/hacs/install` - Download and install HACS from GitHub
-- `GET /api/hacs/status` - Check if HACS is installed
-- `GET /api/hacs/repositories` - List available HACS repositories
-- `POST /api/hacs/install_repository` - Install integration/theme/plugin from HACS
+### WebSocket Integration
+
+Added **persistent WebSocket client** for real-time Home Assistant communication:
+- ✅ Auto-authentication on startup
+- ✅ Message routing with request/response matching
+- ✅ Auto-reconnect with exponential backoff (1s → 60s max)
+- ✅ Thread-safe operations
+- ✅ Graceful shutdown handling
+- ✅ Background task management
+
+**Technical:**
+- New `HAWebSocketClient` service (`app/services/ha_websocket.py`)
+- Integrated into startup/shutdown lifecycle
+- Enabled only in add-on mode (uses SUPERVISOR_TOKEN)
+
+### Enhanced HACS API Endpoints
+
+**All endpoints now use WebSocket for real-time data:**
+
+- `POST /api/hacs/install` - Install HACS from GitHub (file operation)
+- `GET /api/hacs/status` - Check installation and version
+- `GET /api/hacs/repositories?category=integration` - List repositories via WebSocket ✨
+- `GET /api/hacs/search?query=xiaomi&category=integration` - Search repositories ✨ NEW
+- `POST /api/hacs/install_repository` - Install via hacs.download service ✨
+- `POST /api/hacs/update_all` - Update all HACS repos ✨ NEW
+- `GET /api/hacs/repository/{id}` - Get detailed repo info ✨ NEW
+
+**Full workflow now works:**
+```
+User: "Install HACS and then install Xiaomi Gateway 3"
+AI:
+1. Installs HACS from GitHub ✅
+2. Restarts Home Assistant ✅
+3. Waits for WebSocket connection ✅
+4. Searches for "Xiaomi Gateway 3" ✅
+5. Installs via hacs.download service ✅
+6. Guides through configuration ✅
+```
 
 **Features:**
-- ✅ Automatic HACS installation from latest GitHub release
-- ✅ Version detection
-- ✅ Auto-restart after installation
-- ✅ Repository management (coming soon - requires HACS WebSocket API)
+- ✅ Browse all HACS repositories (integrations, themes, plugins)
+- ✅ Search by name, author, description
+- ✅ Install any repository with one command
+- ✅ Update all repositories
+- ✅ Get detailed repository info (stars, versions, authors)
+- ✅ Category filtering (integration, theme, plugin, appdaemon, etc)
 
-**Usage:**
-```
-User: "Install HACS"
-AI: Downloads → Installs → Restarts HA → Done! ✅
-```
+**Requirements:**
+- HACS must be configured via UI first time (one-time setup)
+- WebSocket requires SUPERVISOR_TOKEN (add-on mode)
 
-**Note:** Repository listing and installation will be enhanced in next version with WebSocket API integration.
+## [2.1.0] - 2025-11-09
+
+### ✨ NEW: HACS Support (Initial)
+
+**One-Click HACS Installation** - AI can now install HACS!
+
+Added initial HACS API:
+- `POST /api/hacs/install` - Download and install HACS from GitHub
+- `GET /api/hacs/status` - Check if HACS is installed
+
+**Note:** v2.1.0 only supported installation. v2.2.0 adds full repository management.
 
 ## [2.0.1] - 2025-11-09
 

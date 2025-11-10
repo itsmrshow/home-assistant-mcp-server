@@ -16,6 +16,14 @@ class FileManager:
     
     def _get_full_path(self, relative_path: str) -> Path:
         """Get full path from relative path"""
+        # Handle "/" as root config directory
+        if relative_path == "/" or relative_path == "":
+            return self.config_path
+        
+        # Remove leading slash if present (treat as relative)
+        if relative_path.startswith("/"):
+            relative_path = relative_path[1:]
+        
         full_path = self.config_path / relative_path
         
         # Security: ensure path is within config directory

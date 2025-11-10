@@ -27,3 +27,5 @@ This guide provides comprehensive instructions for AI assistants (like Cursor AI
 **Interactive API Docs:** http://homeassistant.local:8099/docs
 
 
+
+

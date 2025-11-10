@@ -131,3 +131,5 @@ ha_apply_dashboard({
 - ✅ User gets custom dashboard, not template
 
 
+
+

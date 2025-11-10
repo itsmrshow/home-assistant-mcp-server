@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.7.2] - 2025-11-10
+
+### 🐛 Bug Fix: File List Root Directory
+
+**Fixed 500 error when listing files with directory='/'**
+
+**Bug:**
+- `ha_list_files` with directory="/" failed
+- Error: "Path outside config directory: /"
+- AI couldn't browse config directory
+
+**Root Cause:**
+- _get_full_path() treated "/" as absolute path
+- Security check failed
+
+**Fix:**
+- Handle "/" and "" as root config directory
+- Strip leading slashes from paths
+- Return config_path directly for root
+
+**Impact:**
+- ✅ AI can now browse config directory
+- ✅ ha_list_files works correctly
+- ✅ Security still enforced
+
+**Version:** 2.7.2 (PATCH - bug fix)
+
 ## [2.7.1] - 2025-11-10
 
 ### 🎨 UI/UX: Ingress Panel Improvements

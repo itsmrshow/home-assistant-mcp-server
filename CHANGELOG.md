@@ -48,6 +48,48 @@ AI: *generates custom YAML* *proposes* *applies*
 - app/api/ai_instructions.py: added dashboard workflow (+200 lines)
 - app/utils/yaml_editor.py: NEW - safe YAML editing utility
 
+## [2.7.0] - 2025-11-10
+
+### 🏗️ REFACTOR: AI Instructions → Markdown Files
+
+**MAJOR: Modular AI Instructions architecture!**
+
+**Before:**
+- ai_instructions.py: 1295 lines (giant Python string)
+- Hard to edit, no syntax highlighting
+
+**After:**
+- ai_instructions.py: 34 lines (loader only!)
+- 7 modular Markdown files by topic
+- Easy to maintain and update
+
+**New Structure:**
+```
+app/ai_instructions/
+├── __init__.py (loader)
+└── docs/
+    ├── 00_overview.md
+    ├── 01_explain_before_executing.md
+    ├── 02_output_formatting.md
+    ├── 03_critical_safety.md
+    ├── 04_dashboard_generation.md
+    ├── 05_api_summary.md
+    └── 99_final_reminder.md
+```
+
+**Benefits:**
+- ✅ Markdown syntax (easy editing, GitHub preview)
+- ✅ Modular (update sections independently)
+- ✅ Reusable (can export for docs)
+- ✅ Version dynamically injected
+- ✅ 97% code reduction
+
+**Git Stats:**
+- +616 insertions, -1270 deletions
+- Net: -654 lines removed
+
+**Version:** 2.7.0 (MINOR - internal refactor, API unchanged)
+
 ## [2.6.1] - 2025-11-10
 
 ### 📚 Documentation: Complete Reference Update

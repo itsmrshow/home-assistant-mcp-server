@@ -10,7 +10,7 @@ from app.services.git_manager import git_manager
 router = APIRouter()
 logger = logging.getLogger('ha_cursor_agent')
 
-@router.get("/list", response_model=List[dict])
+@router.get("/list")
 async def list_files(
     directory: str = Query("", description="Directory to list (relative to /config)"),
     pattern: str = Query("*.yaml", description="File pattern (e.g., '*.yaml', '*.py')")

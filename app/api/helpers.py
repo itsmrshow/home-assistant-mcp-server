@@ -13,40 +13,42 @@ from app.services.git_manager import git_manager
 router = APIRouter()
 logger = logging.getLogger('ha_cursor_agent')
 
-HELPERS_FILE = "/config/helpers.yaml"
 CONFIG_FILE = "/config/configuration.yaml"
 
+# Each helper type gets its own file
+HELPER_FILES = {
+    'input_boolean': '/config/input_boolean.yaml',
+    'input_text': '/config/input_text.yaml',
+    'input_number': '/config/input_number.yaml',
+    'input_datetime': '/config/input_datetime.yaml',
+    'input_select': '/config/input_select.yaml'
+}
 
-def _load_helpers_yaml() -> Dict[str, Any]:
-    """Load helpers.yaml file, create if doesn't exist"""
-    if not os.path.exists(HELPERS_FILE):
-        # Create empty helpers file with all domains
-        empty_helpers = {
-            'input_boolean': {},
-            'input_text': {},
-            'input_number': {},
-            'input_datetime': {},
-            'input_select': {}
-        }
-        with open(HELPERS_FILE, 'w') as f:
-            yaml.dump(empty_helpers, f, default_flow_style=False, allow_unicode=True)
-        logger.info(f"Created new {HELPERS_FILE}")
-        return empty_helpers
+
+def _load_helper_file(domain: str) -> Dict[str, Any]:
+    """Load helper file for specific domain"""
+    file_path = HELPER_FILES.get(domain)
+    if not file_path or not os.path.exists(file_path):
+        return {}
     
-    with open(HELPERS_FILE, 'r') as f:
+    with open(file_path, 'r') as f:
         content = yaml.safe_load(f) or {}
     return content
 
 
-def _save_helpers_yaml(data: Dict[str, Any]) -> None:
-    """Save helpers.yaml file"""
-    with open(HELPERS_FILE, 'w') as f:
+def _save_helper_file(domain: str, data: Dict[str, Any]) -> None:
+    """Save helper file for specific domain"""
+    file_path = HELPER_FILES.get(domain)
+    if not file_path:
+        raise ValueError(f"Unknown domain: {domain}")
+    
+    with open(file_path, 'w') as f:
         yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-    logger.info(f"Saved {HELPERS_FILE}")
+    logger.info(f"Saved {file_path}")
 
 
-def _ensure_helpers_in_config() -> None:
-    """Ensure helpers.yaml is included in configuration.yaml"""
+def _ensure_domain_in_config(domain: str) -> None:
+    """Ensure helper domain is included in configuration.yaml"""
     if not os.path.exists(CONFIG_FILE):
         logger.warning(f"{CONFIG_FILE} not found")
         return
@@ -54,21 +56,19 @@ def _ensure_helpers_in_config() -> None:
     with open(CONFIG_FILE, 'r') as f:
         config_content = f.read()
     
-    # Check if already includes helpers.yaml
-    if 'helpers.yaml' in config_content or 'input_boolean: !include' in config_content:
-        logger.info("helpers.yaml already referenced in configuration.yaml")
+    file_name = HELPER_FILES[domain].split('/')[-1]  # Get filename without path
+    include_line = f"{domain}: !include {file_name}"
+    
+    # Check if already includes this domain
+    if include_line in config_content:
+        logger.info(f"{domain} already referenced in configuration.yaml")
         return
     
     # Add reference at the end
     with open(CONFIG_FILE, 'a') as f:
-        f.write('\n\n# Input Helpers\n')
-        f.write('input_boolean: !include helpers.yaml\n')
-        f.write('input_text: !include helpers.yaml\n')
-        f.write('input_number: !include helpers.yaml\n')
-        f.write('input_datetime: !include helpers.yaml\n')
-        f.write('input_select: !include helpers.yaml\n')
+        f.write(f'\n{include_line}\n')
     
-    logger.info("Added helpers.yaml reference to configuration.yaml")
+    logger.info(f"Added {domain} reference to configuration.yaml")
 
 
 def _generate_entity_id(domain: str, name: str, existing_helpers: Dict) -> str:
@@ -78,11 +78,10 @@ def _generate_entity_id(domain: str, name: str, existing_helpers: Dict) -> str:
     base_id = ''.join(c for c in base_id if c.isalnum() or c == '_')
     
     # Check if exists in current helpers
-    domain_helpers = existing_helpers.get(domain, {})
     entity_id = base_id
     counter = 1
     
-    while entity_id in domain_helpers:
+    while entity_id in existing_helpers:
         entity_id = f"{base_id}_{counter}"
         counter += 1
     
@@ -212,28 +211,24 @@ async def create_helper(helper: HelperCreate):
         
         helper_name = helper.config['name']
         
-        # Load existing helpers
-        helpers_data = _load_helpers_yaml()
-        
-        # Ensure domain exists in data
-        if helper.type not in helpers_data:
-            helpers_data[helper.type] = {}
+        # Load existing helpers for this domain
+        domain_helpers = _load_helper_file(helper.type)
         
         # Generate entity_id
-        entity_id = _generate_entity_id(helper.type, helper_name, helpers_data)
+        entity_id = _generate_entity_id(helper.type, helper_name, domain_helpers)
         
         # Remove 'name' from config as it's used as the key
         config_without_name = {k: v for k, v in helper.config.items() if k != 'name'}
         config_without_name['name'] = helper_name  # Add it back as a value
         
-        # Add helper to YAML data
-        helpers_data[helper.type][entity_id] = config_without_name
+        # Add helper to domain data
+        domain_helpers[entity_id] = config_without_name
         
-        # Save helpers.yaml
-        _save_helpers_yaml(helpers_data)
+        # Save domain file
+        _save_helper_file(helper.type, domain_helpers)
         
-        # Ensure helpers.yaml is included in configuration.yaml
-        _ensure_helpers_in_config()
+        # Ensure domain is included in configuration.yaml
+        _ensure_domain_in_config(helper.type)
         
         # Reload the specific helper domain
         ws_client = await get_ws_client()
@@ -279,18 +274,18 @@ async def delete_helper(entity_id: str):
         if domain not in valid_types:
             raise HTTPException(status_code=400, detail=f"Invalid helper domain. Must be one of: {', '.join(valid_types)}")
         
-        # Load existing helpers
-        helpers_data = _load_helpers_yaml()
+        # Load existing helpers for this domain
+        domain_helpers = _load_helper_file(domain)
         
         # Check if helper exists
-        if domain not in helpers_data or helper_id not in helpers_data[domain]:
-            raise HTTPException(status_code=404, detail=f"Helper {entity_id} not found in helpers.yaml")
+        if helper_id not in domain_helpers:
+            raise HTTPException(status_code=404, detail=f"Helper {entity_id} not found in {HELPER_FILES[domain]}")
         
         # Remove helper
-        del helpers_data[domain][helper_id]
+        del domain_helpers[helper_id]
         
-        # Save helpers.yaml
-        _save_helpers_yaml(helpers_data)
+        # Save domain file
+        _save_helper_file(domain, domain_helpers)
         
         # Reload the specific helper domain
         ws_client = await get_ws_client()

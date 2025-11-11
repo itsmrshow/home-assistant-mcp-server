@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.9.1] - 2025-11-11
+
+### 🐛 FIX: Separate YAML files for each helper type
+
+**Problem in v2.9.0:**
+- All helper domains (input_boolean, input_text, etc.) referenced same file `helpers.yaml`
+- This caused conflicts - each domain tried to load entire file
+- Helpers not appearing after reload
+
+**Solution:**
+- Each domain now has its own file:
+  - `input_boolean.yaml`
+  - `input_text.yaml`
+  - `input_number.yaml`
+  - `input_datetime.yaml`
+  - `input_select.yaml`
+- Clean configuration.yaml references:
+  ```yaml
+  input_boolean: !include input_boolean.yaml
+  input_text: !include input_text.yaml
+  # ... etc
+  ```
+
+**Now helpers ACTUALLY work!** 🎉
+
 ## [2.9.0] - 2025-11-11
 
 ### 🎉 MAJOR: Helper Creation via YAML Now Works!

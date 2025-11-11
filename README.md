@@ -19,7 +19,7 @@ No more manual YAML editing or searching through documentation - just describe w
 
 https://github.com/user-attachments/assets/0df48019-06c0-48dd-82ad-c7fe0734ddb3
 
-**YouTube Demo:**
+**Full YouTube Demo:**
 - [How to control Home Assistant from Cursor](https://youtu.be/xocbWonWdoc)
 
 ---

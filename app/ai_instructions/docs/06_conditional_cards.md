@@ -6,6 +6,24 @@ Conditional cards allow you to show/hide cards dynamically based on entity state
 
 ---
 
+## 🚨 CRITICAL: Common Mistake to Avoid
+
+**❌ NEVER use `attribute:` in Lovelace conditional cards - it is NOT supported!**
+
+```yaml
+# ❌ THIS DOES NOT WORK IN LOVELACE!
+type: conditional
+conditions:
+  - entity: climate.office_trv
+    attribute: hvac_action    # ← FORBIDDEN in Lovelace!
+    state: heating
+```
+
+**Why:** Lovelace conditional cards do NOT support the `attribute:` key (unlike automations).  
+**Solution:** Create a template sensor first, then use that sensor in conditions.
+
+---
+
 ## ✅ CORRECT PATTERN FOR CONDITIONAL CARDS
 
 ### Basic Structure
@@ -338,35 +356,53 @@ card:
   entity: climate.office_trv
 ```
 
-### Mistake 4: Using Attributes Directly
+### Mistake 4: Using `attribute:` Key (FORBIDDEN!)
+
+**⚠️ CRITICAL: Lovelace conditional cards DO NOT SUPPORT `attribute:` key!**
 
 ```yaml
-# ❌ WRONG - Cannot check attributes directly in conditions
+# ❌ WRONG - "attribute:" is NOT supported in Lovelace conditionals!
+type: conditional
+conditions:
+  - entity: climate.office_trv
+    attribute: hvac_action    # ← This does NOT work!
+    state: heating
+```
+
+```yaml
+# ❌ ALSO WRONG - Even with "condition: state", attribute: does NOT work!
 type: conditional
 conditions:
   - condition: state
     entity: climate.office_trv
-    attribute: hvac_action
+    attribute: hvac_action    # ← Still does NOT work!
     state: heating
 ```
 
 ```yaml
 # ✅ CORRECT - Create template sensor that exposes attribute as state
+# Step 1: In configuration.yaml
 template:
   - sensor:
       - name: "Office TRV HVAC Action"
+        unique_id: office_trv_hvac_action
         state: "{{ state_attr('climate.office_trv', 'hvac_action') }}"
 
-# Then use in conditional:
+# Step 2: Use the sensor in conditional card
 type: conditional
 conditions:
   - condition: state
-    entity: sensor.office_trv_hvac_action
+    entity: sensor.office_trv_hvac_action    # ← Use SENSOR, not climate!
     state: heating
 card:
   type: thermostat
   entity: climate.office_trv
 ```
+
+**Why this happens:**
+- ✅ Home Assistant **automations** support `attribute:` in conditions
+- ❌ Lovelace **dashboard conditional cards** do NOT support `attribute:`
+- This is a common confusion between automation syntax and dashboard syntax!
 
 ### Mistake 5: Wrong Condition Type for Numeric Values
 
@@ -573,7 +609,21 @@ views:
 
 ## 🎓 SUMMARY: GOLDEN RULES
 
-1. ✅ **ALWAYS include `condition: state`** - This is the most common mistake!
+1. 🚨 **NEVER use `attribute:` key** - Lovelace does NOT support it! (automations do, dashboards don't)
+   ```yaml
+   # ❌ FORBIDDEN
+   conditions:
+     - entity: climate.xxx
+       attribute: hvac_action  # ← Does NOT work!
+   
+   # ✅ CORRECT
+   conditions:
+     - condition: state
+       entity: sensor.xxx_hvac_action  # ← Use sensor!
+       state: heating
+   ```
+
+2. ✅ **ALWAYS include `condition: state`** - Second most common mistake!
    ```yaml
    conditions:
      - condition: state  # ← Don't forget this!
@@ -581,21 +631,21 @@ views:
        state: heating
    ```
 
-2. ✅ **Always use array syntax** - `conditions:` with `-` for each item
+3. ✅ **Always use array syntax** - `conditions:` with `-` for each item
 
-3. ✅ **Proper indentation** - `card:` at same level as `conditions:`, not nested
+4. ✅ **Proper indentation** - `card:` at same level as `conditions:`, not nested
 
-4. ✅ **Use template sensors for attributes** - Can't check `hvac_action` directly, create sensor first
+5. ✅ **Use template sensors for attributes** - Can't check attributes directly, create sensor first
 
-5. ✅ **Choose correct condition type:**
+6. ✅ **Choose correct condition type:**
    - `condition: state` for text states (heating, on, off)
    - `condition: numeric_state` for numbers (above, below)
 
-6. ✅ **Test conditions first** - Use Developer Tools → States to verify entity states
+7. ✅ **Test conditions first** - Use Developer Tools → States to verify entity states
 
-7. ✅ **Keep some static cards** - Don't make everything conditional, provide context
+8. ✅ **Keep some static cards** - Don't make everything conditional, provide context
 
-8. ✅ **Quote when needed** - Simple states can be unquoted, special chars need quotes
+9. ✅ **Quote when needed** - Simple states can be unquoted, special chars need quotes
 
 ---
 

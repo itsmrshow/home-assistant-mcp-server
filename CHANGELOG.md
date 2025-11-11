@@ -2,6 +2,62 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.7.7] - 2025-11-11
+
+### 🚨 Critical: Added Explicit Ban on `attribute:` in Conditional Cards
+
+**MAJOR UPDATE: Found and fixed critical mistake pattern in AI instructions**
+
+**The Problem:**
+AI was generating invalid conditional cards with `attribute:` key:
+```yaml
+# ❌ This was being generated (DOES NOT WORK!)
+type: conditional
+conditions:
+  - entity: climate.office_trv
+    attribute: hvac_action    # ← Lovelace does NOT support this!
+    state: heating
+```
+
+**Root Cause:**
+- Lovelace conditional cards do NOT support `attribute:` key
+- Home Assistant automations DO support `attribute:` (confusion!)
+- AI instructions didn't explicitly forbid this pattern
+
+**What Was Added:**
+
+1. **🚨 CRITICAL warning section** at document start
+2. **Expanded Mistake #4** with multiple wrong examples
+3. **Updated Golden Rules** - moved `attribute:` ban to #1
+4. **Explanation of automation vs dashboard syntax difference**
+
+**New Structure:**
+```yaml
+# ✅ CORRECT - Use template sensor
+template:
+  - sensor:
+      - name: "Office TRV HVAC Action"
+        state: "{{ state_attr('climate.xxx', 'hvac_action') }}"
+
+# Then in dashboard:
+conditions:
+  - condition: state
+    entity: sensor.office_trv_hvac_action
+    state: heating
+```
+
+**Impact:**
+- AI will never use `attribute:` in Lovelace conditionals
+- Clear explanation why (automation vs dashboard difference)
+- Template sensor pattern shown as solution
+- Fixed actual broken dashboard in Home Assistant (commit 3bee434b)
+
+**Files Updated:**
+- `06_conditional_cards.md` - Added explicit ban and examples
+- Home Assistant `heating-now.yaml` - Fixed all 7 TRV conditionals
+
+**Version:** 2.7.7 (PATCH - critical documentation fix)
+
 ## [2.7.6] - 2025-11-11
 
 ### 🐛 Fix: Conditional Cards Guide - Corrected Structure

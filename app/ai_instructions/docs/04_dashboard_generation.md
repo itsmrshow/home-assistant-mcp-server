@@ -174,6 +174,20 @@ ha_apply_dashboard({
 - ✅ Agent only applies (simple, reliable)
 - ✅ User gets custom dashboard, not template
 
+---
+
+## 🎯 Advanced Features
+
+### Conditional Cards
+
+For dynamic dashboards that show/hide cards based on entity state (e.g., showing only TRVs that are actively heating), see **06_conditional_cards.md** for detailed patterns and examples.
+
+**Common use cases:**
+- Heating monitoring (show only active TRVs)
+- Low battery alerts
+- Active media players
+- Problem/warning cards
+
 
 
 

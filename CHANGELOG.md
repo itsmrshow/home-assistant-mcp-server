@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.7.5] - 2025-11-11
+
+### 📚 Documentation: Conditional Cards Guide
+
+**Comprehensive instructions for creating conditional cards in Lovelace dashboards**
+
+**Added:**
+- New AI instruction document: `06_conditional_cards.md`
+- Complete guide based on successful "Heating Now Dashboard" implementation
+- Real-world patterns for conditional TRV heating cards
+- Common mistakes and how to avoid them
+- Ready-to-use templates
+
+**Guide Contents:**
+- ✅ Correct YAML syntax for conditional cards
+- ✅ Multiple condition patterns (AND logic)
+- ✅ State checking (exact, not, above, below)
+- ✅ Availability checks
+- ✅ Debugging tips
+- ✅ Copy-paste templates
+
+**Use Cases:**
+- Heating monitoring (show only active TRVs)
+- Low battery alerts
+- Active media players
+- Motion detection
+- Problem/warning cards
+
+**Integration:**
+- Auto-loaded in AI instructions via `/api/instructions`
+- Cross-referenced from dashboard generation guide
+- Prevents common conditional card mistakes
+
+**Reference:** Based on commit `a16f9403` - Heating Now Dashboard with conditional TRV controls
+
+**Version:** 2.7.5 (PATCH - documentation enhancement)
+
 ## [2.7.4] - 2025-11-10
 
 ### 🐛 Bug Fix: Git Rollback Endpoint

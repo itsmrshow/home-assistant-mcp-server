@@ -31,6 +31,7 @@ def load_all_instructions(version: str = "2.6.1") -> str:
         '02_output_formatting.md',
         '03_critical_safety.md',
         '04_dashboard_generation.md',
+        '06_conditional_cards.md',
         '05_api_summary.md',
         '99_final_reminder.md',
     ]
@@ -56,6 +57,8 @@ def get_instruction_files() -> List[str]:
     if not DOCS_DIR.exists():
         return []
     return sorted([f.name for f in DOCS_DIR.glob('*.md')])
+
+
 
 
 

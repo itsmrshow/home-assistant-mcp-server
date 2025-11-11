@@ -26,7 +26,11 @@ async def list_files(
     try:
         files = await file_manager.list_files(directory, pattern)
         logger.info(f"Listed {len(files)} files in '{directory}' with pattern '{pattern}'")
-        return files
+        return {
+            "success": True,
+            "count": len(files),
+            "files": files
+        }
     except Exception as e:
         logger.error(f"Failed to list files: {e}")
         raise HTTPException(status_code=500, detail=str(e))

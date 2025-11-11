@@ -286,6 +286,25 @@ class HAWebSocketClient:
         result = await self._send_message({'type': 'get_services'})
         return result or {}
     
+    async def create_config_entry_helper(self, domain: str, data: dict) -> Any:
+        """
+        Create helper via config entry flow (UI method)
+        
+        Args:
+            domain: Helper domain (input_boolean, input_text, etc.)
+            data: Helper configuration
+            
+        Returns:
+            Config entry result
+        """
+        # Try config flow init
+        result = await self._send_message({
+            'type': f'config/{domain}/create',
+            'data': data
+        })
+        logger.info(f"Created config entry for: {domain}")
+        return result
+    
     async def subscribe_events(self, event_type: str, callback: Callable) -> int:
         """
         Subscribe to Home Assistant events

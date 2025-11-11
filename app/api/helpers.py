@@ -10,6 +10,27 @@ from app.services.git_manager import git_manager
 router = APIRouter()
 logger = logging.getLogger('ha_cursor_agent')
 
+@router.get("/debug/services")
+async def debug_services():
+    """Debug endpoint to see available services for helpers"""
+    try:
+        ws_client = await get_ws_client()
+        all_services = await ws_client.get_services()
+        
+        # Extract helper-related services
+        helper_services = {}
+        for domain in ['input_boolean', 'input_text', 'input_number', 'input_datetime', 'input_select']:
+            if domain in all_services:
+                helper_services[domain] = all_services[domain]
+        
+        return {
+            "success": True,
+            "helper_services": helper_services
+        }
+    except Exception as e:
+        logger.error(f"Failed to get services: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.get("/list")
 async def list_helpers():
     """

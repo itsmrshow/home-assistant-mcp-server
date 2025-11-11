@@ -30,20 +30,31 @@ async def list_scripts():
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/create", response_model=Response)
-async def create_script(script: ScriptData):
+async def create_script(config: dict):
     """
     Create new script
     
     **Example:**
     ```json
     {
+      "test_script": {
+        "alias": "Test Script",
+        "sequence": [
+          {"service": "light.turn_on", "target": {"entity_id": "light.living_room"}}
+        ],
+        "mode": "single",
+        "icon": "mdi:play"
+      }
+    }
+    ```
+    
+    Or as single script:
+    ```json
+    {
       "entity_id": "my_script",
       "alias": "My Script",
-      "sequence": [
-        {"service": "light.turn_on", "target": {"entity_id": "light.living_room"}}
-      ],
-      "mode": "single",
-      "icon": "mdi:play"
+      "sequence": [...],
+      "mode": "single"
     }
     ```
     """
@@ -55,12 +66,27 @@ async def create_script(script: ScriptData):
         except FileNotFoundError:
             scripts = {}
         
+        # Handle two formats:
+        # Format 1: {"script_id": {"alias": ..., "sequence": ...}}
+        # Format 2: {"entity_id": "...", "alias": ..., "sequence": ...}
+        
+        if 'entity_id' in config:
+            # Format 2: Single script with entity_id field
+            entity_id = config.pop('entity_id')
+            script_data = config
+        else:
+            # Format 1: Dictionary with script_id as key
+            if len(config) != 1:
+                raise ValueError("Config must contain exactly one script")
+            entity_id = list(config.keys())[0]
+            script_data = config[entity_id]
+        
         # Check if exists
-        if script.entity_id in scripts:
-            raise ValueError(f"Script '{script.entity_id}' already exists")
+        if entity_id in scripts:
+            raise ValueError(f"Script '{entity_id}' already exists")
         
         # Add new script
-        scripts[script.entity_id] = script.model_dump(exclude={'entity_id'}, exclude_none=True)
+        scripts[entity_id] = script_data
         
         # Write back
         new_content = yaml.dump(scripts, allow_unicode=True, default_flow_style=False, sort_keys=False)
@@ -71,11 +97,12 @@ async def create_script(script: ScriptData):
         
         # Commit
         if git_manager.enabled:
-            await git_manager.commit_changes(f"Create script: {script.alias}")
+            script_alias = script_data.get('alias', entity_id)
+            await git_manager.commit_changes(f"Create script: {script_alias}")
         
-        logger.info(f"Created script: {script.entity_id}")
+        logger.info(f"Created script: {entity_id}")
         
-        return Response(success=True, message=f"Script created: {script.entity_id}")
+        return Response(success=True, message=f"Script created: {entity_id}")
     except Exception as e:
         logger.error(f"Failed to create script: {e}")
         raise HTTPException(status_code=500, detail=str(e))

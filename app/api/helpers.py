@@ -396,47 +396,64 @@ async def delete_helper(entity_id: str):
         except Exception as e:
             logger.debug(f"Could not delete via config entry (helper may not exist or already deleted): {e}")
         
-        # Try to delete via entity registry (for restored entities)
+        # Try to delete via entity registry (for restored entities from storage, not YAML)
+        # Note: YAML-managed helpers cannot be deleted via API - they must be removed from YAML
         if not deleted_via_yaml and not deleted_via_config_entry:
             try:
                 state = await ha_client.get_state(entity_id)
-                if state and state.get('attributes', {}).get('restored', False):
-                    # Helper is restored - try to delete via entity registry
-                    logger.info(f"Helper {entity_id} is restored, attempting to delete via entity registry")
+                if state:
                     ws_client = await get_ws_client()
                     
-                    # Get entity registry entry
+                    # Get entity registry entry to check if it's YAML-managed
                     registry_result = await ws_client._send_message({
                         'type': 'config/entity_registry/get',
                         'entity_id': entity_id
                     })
                     
-                    logger.debug(f"Entity registry get result for {entity_id}: {registry_result}")
+                    logger.info(f"Entity registry get result for {entity_id}: {registry_result}")
                     
                     if isinstance(registry_result, dict) and 'result' in registry_result:
                         registry_entry = registry_result['result']
-                        logger.debug(f"Registry entry for {entity_id}: {registry_entry}")
+                        logger.info(f"Registry entry for {entity_id}: {registry_entry}")
+                        
                         if registry_entry:
-                            # Delete from entity registry
+                            # Check if helper is YAML-managed (cannot be deleted via API)
+                            # YAML-managed entities have platform = None or config_entry_id = None
+                            config_entry_id = registry_entry.get('config_entry_id')
+                            platform = registry_entry.get('platform')
+                            
+                            # If it's YAML-managed and restored, we can't delete it via API
+                            if state.get('attributes', {}).get('restored', False) and not config_entry_id:
+                                logger.warning(f"Helper {entity_id} is YAML-managed and restored. Cannot delete via API. Must remove from YAML and restart HA.")
+                                raise HTTPException(
+                                    status_code=400,
+                                    detail=f"Helper {entity_id} is YAML-managed and cannot be deleted via API. Please remove it from YAML configuration and restart Home Assistant."
+                                )
+                            
+                            # Try to delete from entity registry (for storage helpers)
                             delete_registry_result = await ws_client._send_message({
                                 'type': 'config/entity_registry/remove',
                                 'entity_id': entity_id
                             })
                             
-                            logger.debug(f"Entity registry remove result for {entity_id}: {delete_registry_result}")
+                            logger.info(f"Entity registry remove result for {entity_id}: {delete_registry_result}")
                             
                             if isinstance(delete_registry_result, dict) and delete_registry_result.get('success', False):
                                 deleted_via_config_entry = True
-                                logger.info(f"✅ Deleted restored helper {entity_id} via entity registry")
+                                logger.info(f"✅ Deleted helper {entity_id} via entity registry")
                             elif delete_registry_result is None:
+                                # Some HA versions return None on success
                                 deleted_via_config_entry = True
-                                logger.info(f"✅ Deleted restored helper {entity_id} via entity registry (result: None)")
+                                logger.info(f"✅ Deleted helper {entity_id} via entity registry (result: None)")
                             elif isinstance(delete_registry_result, dict):
-                                logger.warning(f"Entity registry remove returned: {delete_registry_result}")
+                                error_msg = delete_registry_result.get('error', {}).get('message', str(delete_registry_result))
+                                logger.warning(f"Entity registry remove returned error: {error_msg}")
                         else:
-                            logger.debug(f"No registry entry found for {entity_id}")
+                            logger.warning(f"No registry entry found for {entity_id} (result was None or empty)")
                     else:
-                        logger.debug(f"Unexpected registry result format for {entity_id}: {registry_result}")
+                        logger.warning(f"Unexpected registry result format for {entity_id}: {registry_result}")
+            except HTTPException:
+                raise
             except Exception as e:
                 logger.warning(f"Could not delete via entity registry: {e}", exc_info=True)
         

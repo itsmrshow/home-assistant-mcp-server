@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.9.7] - 2025-11-18
+
+### 🔧 FIX: YAML-Managed Helper Deletion Detection
+
+**Properly detect and handle YAML-managed helpers**
+
+**Changes:**
+- ✅ Check if helper is YAML-managed (config_entry_id = None in entity registry)
+- ✅ Return clear error message for YAML-managed helpers (cannot be deleted via API)
+- ✅ Only attempt entity registry deletion for storage helpers (created via UI)
+- ✅ Better error messages explaining that YAML helpers must be removed from YAML files
+
+**Technical Details:**
+- YAML-managed helpers have `config_entry_id = None` in entity registry
+- These helpers cannot be deleted via API - they must be removed from YAML and HA restarted
+- Storage helpers (created via UI) can be deleted via `config/entity_registry/remove`
+
 ## [2.9.6] - 2025-11-18
 
 ### 🐛 DEBUG: Enhanced Entity Registry Deletion Logging

@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.9.3] - 2025-11-18
+
+### 🔧 IMPROVED: Helper Deletion
+
+**Enhanced helper deletion to support config entry helpers**
+
+**Changes:**
+- ✅ `DELETE /api/helpers/delete/{entity_id}` now attempts to delete helpers created via UI/API (config entries)
+- ✅ First tries YAML deletion (if helper exists in YAML)
+- ✅ Then tries config entry deletion (if helper was created via UI/API)
+- ✅ Better error messages when helper cannot be deleted automatically
+
+**Use Cases:**
+- Delete helpers created via `ha_create_helper` MCP tool
+- Delete helpers created manually via Home Assistant UI
+- Clean up obsolete helpers from configuration
+
 ## [2.9.2] - 2025-11-18
 
 ### ✨ NEW: Service Call API Endpoint

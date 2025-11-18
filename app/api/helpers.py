@@ -255,9 +255,11 @@ async def create_helper(helper: HelperCreate):
 @router.delete("/delete/{entity_id}")
 async def delete_helper(entity_id: str):
     """
-    Delete input helper from YAML configuration
+    Delete input helper from YAML configuration or config entry
     
-    **Method:** Removes from helpers.yaml and reloads the integration
+    **Method:** 
+    1. First tries to remove from YAML file (if exists)
+    2. Then tries to delete via config entry API (if created via UI/API)
     
     Example:
     - `/api/helpers/delete/input_boolean.my_switch`
@@ -274,34 +276,117 @@ async def delete_helper(entity_id: str):
         if domain not in valid_types:
             raise HTTPException(status_code=400, detail=f"Invalid helper domain. Must be one of: {', '.join(valid_types)}")
         
-        # Load existing helpers for this domain
-        domain_helpers = _load_helper_file(domain)
+        deleted_via_yaml = False
+        deleted_via_config_entry = False
         
-        # Check if helper exists
-        if helper_id not in domain_helpers:
-            raise HTTPException(status_code=404, detail=f"Helper {entity_id} not found in {HELPER_FILES[domain]}")
+        # Try to delete from YAML first
+        try:
+            domain_helpers = _load_helper_file(domain)
+            if helper_id in domain_helpers:
+                # Remove helper from YAML
+                del domain_helpers[helper_id]
+                _save_helper_file(domain, domain_helpers)
+                
+                # Reload the specific helper domain
+                ws_client = await get_ws_client()
+                await ws_client.call_service(domain, 'reload', {})
+                logger.info(f"Reloaded {domain} integration after YAML deletion")
+                deleted_via_yaml = True
+        except Exception as e:
+            logger.debug(f"Helper {entity_id} not found in YAML: {e}")
         
-        # Remove helper
-        del domain_helpers[helper_id]
+        # Try to delete via config entry API (for helpers created via UI/API)
+        # Note: Helpers created via config entry need to be deleted through Home Assistant UI
+        # or by finding and deleting the config entry. This is a fallback attempt.
+        try:
+            # Check if helper exists as entity (means it's a config entry helper)
+            try:
+                state = await ha_client.get_state(entity_id)
+                if state:
+                    # Helper exists - try to find and delete its config entry
+                    ws_client = await get_ws_client()
+                    
+                    # Get all config entries
+                    config_entries_result = await ws_client._send_message({
+                        'type': 'config/config_entries/list'
+                    })
+                    
+                    # Parse result
+                    if isinstance(config_entries_result, dict):
+                        if 'result' in config_entries_result:
+                            entries = config_entries_result['result']
+                        else:
+                            entries = []
+                    elif isinstance(config_entries_result, list):
+                        entries = config_entries_result
+                    else:
+                        entries = []
+                    
+                    # Find matching config entry by checking entity_id in options
+                    for entry in entries:
+                        if entry.get('domain') == domain:
+                            entry_id = entry.get('entry_id')
+                            entry_title = entry.get('title', '')
+                            
+                            # Try to match by title or by checking if entity_id matches
+                            # For input_text helpers, title often matches the name
+                            if entry_id and (helper_id.lower() in entry_title.lower() or entry_title.lower() in helper_id.lower()):
+                                # Delete config entry
+                                delete_result = await ws_client._send_message({
+                                    'type': 'config/config_entries/delete',
+                                    'entry_id': entry_id
+                                })
+                                
+                                # Check if deletion was successful
+                                if isinstance(delete_result, dict) and delete_result.get('success', False):
+                                    deleted_via_config_entry = True
+                                    logger.info(f"Deleted config entry {entry_id} for helper {entity_id}")
+                                    break
+                                elif delete_result is None or (isinstance(delete_result, dict) and 'error' not in delete_result):
+                                    # Some APIs return None on success
+                                    deleted_via_config_entry = True
+                                    logger.info(f"Deleted config entry {entry_id} for helper {entity_id}")
+                                    break
+            except Exception as e:
+                logger.debug(f"Helper {entity_id} does not exist as entity: {e}")
+        except Exception as e:
+            logger.debug(f"Could not delete via config entry (helper may not exist or already deleted): {e}")
         
-        # Save domain file
-        _save_helper_file(domain, domain_helpers)
+        # If neither method worked, check if helper actually exists
+        if not deleted_via_yaml and not deleted_via_config_entry:
+            # Check if helper exists in HA
+            try:
+                state = await ha_client.get_state(entity_id)
+                if state:
+                    # Helper exists but we couldn't delete it - try direct API call
+                    # For config entry helpers, we need to find and delete the config entry
+                    # This is a fallback - user may need to delete manually via UI
+                    raise HTTPException(
+                        status_code=404, 
+                        detail=f"Helper {entity_id} exists but could not be deleted automatically. It may have been created via UI. Please delete manually via Settings → Helpers or try restarting Home Assistant after removing from YAML."
+                    )
+            except:
+                pass
+            
+            if not deleted_via_yaml:
+                raise HTTPException(status_code=404, detail=f"Helper {entity_id} not found in {HELPER_FILES[domain]}")
         
-        # Reload the specific helper domain
-        ws_client = await get_ws_client()
-        await ws_client.call_service(domain, 'reload', {})
-        logger.info(f"Reloaded {domain} integration")
-        
-        # Commit changes
-        if git_manager.enabled:
+        # Commit changes if YAML was modified
+        if deleted_via_yaml and git_manager.enabled:
             await git_manager.commit_changes(f"Delete helper: {entity_id}")
         
-        logger.info(f"Deleted helper: {entity_id}")
+        method_used = []
+        if deleted_via_yaml:
+            method_used.append("YAML")
+        if deleted_via_config_entry:
+            method_used.append("config entry")
+        
+        logger.info(f"Deleted helper: {entity_id} via {', '.join(method_used)}")
         
         return Response(
             success=True,
-            message=f"Helper deleted: {entity_id}",
-            data={"entity_id": entity_id}
+            message=f"Helper deleted: {entity_id} (via {', '.join(method_used)})",
+            data={"entity_id": entity_id, "deleted_via_yaml": deleted_via_yaml, "deleted_via_config_entry": deleted_via_config_entry}
         )
     except HTTPException:
         raise

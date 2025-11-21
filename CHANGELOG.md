@@ -11,19 +11,6 @@ All notable changes to this project will be documented in this file.
 - ✅ Updated MCP client, handlers, and tool schema with `ha_logbook_entries`
 - ✅ Documented new capability and expanded HA agent test suite to cover logbook operations
 
-### ♻️ IMPROVED: Buffer TRV Stability
-
-- ✅ Added reliable accumulation of buffer TRVs before writing to `group.climate_buffer_trvs`
-- ✅ Prevent duplicate entries and race conditions when multiple TRVs enter buffer mode
-- ✅ Added `force` option to `climate_deactivate_buffer_trvs` so shutdown scripts fully reset TRVs
-- ✅ Ensured automations call the updated scripts when the climate system toggles
-
-### 💡 NEW: Motion-Activated Entrance Light Automation
-
-- ✅ Added `entrance_motion_light` automation with lux check and configurable delay
-- ✅ Adds logbook entries for turn-on/off events for easy auditing
-- ✅ Helps verify motion sensor performance alongside new logbook tooling
-
 ## [2.9.11] - 2025-11-18
 
 ### 🐛 FIX: Entity Registry Result Format Handling

@@ -2,6 +2,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.9.15] - 2025-11-23
+
+### ✨ NEW: Theme Management API & MCP Tools
+
+**Complete theme management functionality for Home Assistant**
+
+- ✅ Added `/api/themes` endpoints: list, get, create, update, delete, reload, check_config
+- ✅ Added theme management methods to HA client
+- ✅ Added 7 MCP tools for theme management:
+  - `ha_list_themes` - List all available themes
+  - `ha_get_theme` - Get theme content and configuration
+  - `ha_create_theme` - Create a new theme
+  - `ha_update_theme` - Update an existing theme
+  - `ha_delete_theme` - Delete a theme
+  - `ha_reload_themes` - Reload themes in Home Assistant
+  - `ha_check_theme_config` - Check if themes are configured
+- ✅ Updated MCP package version to 3.2.5
+
+**Use Cases:**
+- Create custom themes with CSS variables
+- Manage themes programmatically via AI
+- Check theme configuration status
+- Reload themes without restarting HA
+
+**Example:**
+```yaml
+nice_dark:
+  primary-color: "#ffb74d"
+  accent-color: "#ffb74d"
+  primary-background-color: "#101018"
+  card-background-color: "#181824"
+  ha-card-border-radius: "18px"
+  ...
+```
+
 ## [2.9.14] - 2025-11-23
 
 ### 🐛 FIX: Entity Rename via WebSocket API

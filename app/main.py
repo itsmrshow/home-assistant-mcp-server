@@ -12,7 +12,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, HTMLResponse
 
-from app.api import files, entities, helpers, automations, scripts, system, backup, logs, logbook, ai_instructions, hacs, addons, lovelace
+from app.api import files, entities, helpers, automations, scripts, system, backup, logs, logbook, ai_instructions, hacs, addons, lovelace, themes
 from app.utils.logger import setup_logger
 from app.ingress_panel import generate_ingress_html
 from app.services import ha_websocket
@@ -23,7 +23,7 @@ LOG_LEVEL = os.getenv('LOG_LEVEL', 'info').upper()
 logger = setup_logger('ha_cursor_agent', LOG_LEVEL)
 
 # Agent version
-AGENT_VERSION = "2.9.14"
+AGENT_VERSION = "2.9.15"
 
 # FastAPI app
 app = FastAPI(
@@ -225,6 +225,7 @@ app.include_router(logbook.router, prefix="/api/logbook", tags=["Logbook"], depe
 app.include_router(hacs.router, prefix="/api/hacs", tags=["HACS"])
 app.include_router(addons.router, prefix="/api/addons", tags=["Add-ons"])
 app.include_router(lovelace.router, prefix="/api/lovelace", tags=["Lovelace"], dependencies=[Depends(verify_token)])
+app.include_router(themes.router, prefix="/api/themes", tags=["Themes"], dependencies=[Depends(verify_token)])
 app.include_router(ai_instructions.router, prefix="/api/ai")
 
 

@@ -115,22 +115,7 @@ https://github.com/user-attachments/assets/0df48019-06c0-48dd-82ad-c7fe0734ddb3
  
 - [YouTube Installation guide: how to install the Home Assistant Cursor Agent](https://youtu.be/RZNkNZnhMrc)
 
-### 1. Add Repository
-1. **Settings** → **Add-ons** → **Add-on Store** → **⋮** → **Repositories**
-2. Add: `https://github.com/Coolver/home-assistant-cursor-agent`
-3. Click **Add**
-
-### 2. Install
-1. Refresh the page
-2. Find **HA Cursor Agent** → Click **INSTALL**
-3. Wait for installation
-
-### 3. Start
-1. **Configuration** tab → Keep defaults → **SAVE**
-2. **Info** tab → **Start on boot: ON** → **START**
-3. **Wait for startup** (~10 seconds)
-
-### 4. Install Node.js (if not already installed)
+### 1. Install Node.js (if not already installed)
 
 The MCP server requires Node.js to run on your computer (where Cursor is installed):
 
@@ -139,20 +124,38 @@ The MCP server requires Node.js to run on your computer (where Cursor is install
 3. After installation, verify: `node --version` should show v18.0.0 or higher
 4. **Important:** Install Node.js on the computer where Cursor runs, not on the Home Assistant server
 
-### 5. Setup MCP in Cursor
+### 2. Add Repository
+
+Open your **Home Assistant UI** (usually http://homeassistant.local:8123):
+
+1. Go to **Settings** → **Add-ons** → **Add-on Store** → **⋮** → **Repositories**
+2. Add: `https://github.com/Coolver/home-assistant-cursor-agent`
+3. Click **Add**
+
+### 3. Install and Start Add-on
+
+Still in **Home Assistant UI**:
+
+1. Refresh the page
+2. Find **HA Cursor Agent** → Click **INSTALL**
+3. Wait for installation to complete
+4. Go to **Configuration** tab → Keep defaults → **SAVE**
+5. Go to **Info** tab → **Start on boot: ON** → **START**
+6. **Wait for startup** (~10 seconds)
+
+### 4. Setup MCP in Cursor
 
 **Get configuration from Home Assistant:**
-1. Open your **Home Assistant** (usually http://homeassistant.local:8123)
-2. Go to **Settings** → **Add-ons** → **HA Cursor Agent**
-3. Click **"Open Web UI"** button
-4. You'll see this interface:
+1. In **Home Assistant UI**, go to **Settings** → **Add-ons** → **HA Cursor Agent**
+2. Click **"Open Web UI"** button
+3. You'll see this interface:
 
 <p align="center">
   <img src=".github/images/ingress-panel.jpg" alt="HA Cursor Agent Ingress Panel" width="700">
 </p>
 
-5. Click **"Copy Configuration to Clipboard"** button
-6. Configuration copied to clipboard! ✅
+4. Click **"Copy Configuration to Clipboard"** button
+5. Configuration copied to clipboard! ✅
 
 **Add to Cursor AI:**
 1. Open **Cursor** editor
@@ -184,7 +187,7 @@ The MCP server requires Node.js to run on your computer (where Cursor is install
 
 Done! Cursor AI is now connected to your Home Assistant 🎉
 
-### 6. Test Connection
+### 5. Test Connection
 
 **Test that everything works:**
 

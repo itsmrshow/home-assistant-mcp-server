@@ -1,8 +1,10 @@
-ARG BUILD_FROM
-FROM ${BUILD_FROM}
+# Home Assistant MCP Server - Standalone Docker Image
+FROM python:3.11-alpine
 
-# Version: 2.3.12 - Force rebuild for repository parsing fix
-# Build timestamp: 2025-11-09 15:25:00 UTC
+# Version: 3.0.0 - Standalone MCP Server (not an add-on)
+LABEL maintainer="Home Assistant MCP Server"
+LABEL description="MCP Server for Home Assistant - enables AI clients to manage HA via Model Context Protocol"
+
 # Install system dependencies
 RUN apk add --no-cache \
     git \
@@ -21,10 +23,14 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy application
 COPY app/ ./app/
-COPY run.sh .
+COPY ./run.sh ./
+COPY ./entrypoint.sh ./
 
-# Make run script executable
-RUN chmod +x run.sh
+# Make scripts executable
+RUN chmod +x run.sh entrypoint.sh
+
+# Create config directory
+RUN mkdir -p /config
 
 # Expose port
 EXPOSE 8099
@@ -35,4 +41,3 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
 
 # Run
 CMD ["./run.sh"]
-

@@ -1,6 +1,6 @@
-# HA CURSOR AGENT - INSTRUCTIONS FOR AI ASSISTANTS
+# HOME ASSISTANT MCP SERVER - INSTRUCTIONS FOR AI ASSISTANTS
 
-**Version:** 2.6.1  
+**Version:** 3.0.0  
 **Base URL:** http://homeassistant.local:8099  
 **Interactive Docs:** http://homeassistant.local:8099/docs
 
@@ -8,7 +8,7 @@
 
 ## About This Guide
 
-This guide provides comprehensive instructions for AI assistants (like Cursor AI) on how to safely and effectively interact with Home Assistant through the HA Cursor Agent.
+This guide provides comprehensive instructions for AI assistants on how to safely and effectively interact with Home Assistant through the Home Assistant MCP Server.
 
 **Key Principles:**
 - 🛡️ **Safety First** - Always analyze before modifying

@@ -1,87 +1,68 @@
-# HA Cursor Agent - Home Assistant Add-on
+# Home Assistant MCP Server
 
-[![Version](https://img.shields.io/badge/version-2.9.17-blue.svg)](https://github.com/Coolver/home-assistant-cursor-agent)
+[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/itsmrshow/home-assistant-mcp-server)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![MCP Package](https://img.shields.io/npm/v/@coolver/home-assistant-mcp?label=MCP%20Package)](https://www.npmjs.com/package/@coolver/home-assistant-mcp)
+[![Docker Hub](https://img.shields.io/docker/pulls/itsmrshow/home-assistant-mcp-server)](https://hub.docker.com/r/itsmrshow/home-assistant-mcp-server)
+[![GitHub Container Registry](https://img.shields.io/badge/ghcr-available-blue)](https://github.com/itsmrshow/home-assistant-mcp-server/pkgs/container/home-assistant-mcp-server)
 
-**Let AI build your Home Assistant automations - just describe what you want in natural language** 🏠🤖
+**A standalone MCP (Model Context Protocol) server that enables AI assistants to interact with Home Assistant** 🏠🤖
 
-Transform your smart home management! This add-on enables Cursor AI to:
-- 📝 Analyze your Home Assistant configuration and devices
-- 🏗️ Create intelligent automations, scripts, and complete systems
-- 🔍 Monitor and troubleshoot your setup through log analysis
-- 📦 Install and manage HACS integrations
-- 🔄 Safely deploy changes with automatic Git versioning
-
-No more manual YAML editing or searching through documentation - just describe what you want in natural language!
-
-**Real example:** User says *"Install smart climate control"* → AI analyzes 7 TRVs, creates 10 automations + 9 helpers + 10 sensors + 5 scripts, deploys everything, and it just works!
-
-https://github.com/user-attachments/assets/0df48019-06c0-48dd-82ad-c7fe0734ddb3
-
-**Full YouTube Demo:**
-- [How to control Home Assistant from Cursor](https://youtu.be/xocbWonWdoc)
+> **Note:** This is a fork of [home-assistant-cursor-agent](https://github.com/Coolver/home-assistant-cursor-agent) by Coolver, adapted to work as a standalone Docker container with any Home Assistant installation (not just Home Assistant OS) and any AI client that supports the MCP protocol (not just Cursor).
 
 ---
 
 ## 🎯 What is this?
 
-**HA Cursor Agent** is a Home Assistant Add-on that provides a **REST API** enabling AI assistants (like Cursor AI via [MCP protocol](https://github.com/Coolver/home-assistant-mcp)) to:
+**Home Assistant MCP Server** is a standalone FastAPI server that provides a REST API enabling AI assistants to interact with Home Assistant through the Model Context Protocol (MCP). It works with:
 
-### 🔍 Analyze Your Setup
-✅ **Read entire configuration** - entities, automations, scripts, helpers  
-✅ **Understand your devices** - detects capabilities and relationships  
-✅ **Learn existing patterns** - analyzes what you already have  
+- ✅ **Any Home Assistant installation:** Home Assistant Container, Core, Supervised, or OS
+- ✅ **Any AI client:** Cursor, Claude Desktop, or any MCP-compatible client
+- ✅ **Dockerized Home Assistant:** Specifically designed for containerized deployments
 
-### 🏗️ Build Intelligence
-✅ **Create complete systems** - 10+ interconnected automations in seconds  
-✅ **Generate helpers and sensors** - tailored to your needs  
-✅ **Write optimized scripts** - based on your actual devices  
-✅ **Deploy dashboards** - with all your entities  
+### 🔍 What AI Can Do
 
-### 📦 Extend with Community
-✅ **Install HACS** - get access to 1000+ custom integrations  
-✅ **Search repositories** - find themes, plugins, and integrations  
-✅ **Install integrations** - one-command setup for community components  
-✅ **Auto-updates** - keep all HACS repositories up to date  
+**Analyze Your Setup:**
+- Read entire HA configuration (entities, automations, scripts, helpers)
+- Understand device capabilities and relationships
+- Learn existing automation patterns
 
-### 🔒 Safe Operations
-✅ **Git versioning** - automatic backups of every change  
-✅ **Configuration validation** - tests before applying  
-✅ **Rollback capability** - undo any change instantly  
-✅ **Activity monitoring** - full audit log of all operations  
+**Build & Deploy:**
+- Create complete automation systems
+- Generate input helpers and template sensors
+- Write optimized scripts based on your devices
+- Deploy Lovelace dashboards
 
-**Result:** Describe your goal → AI analyzes your setup → Creates custom solution → Deploys automatically! 🚀
+**Manage Community Integrations:**
+- Install and configure HACS
+- Search and install custom integrations
+- Manage themes and plugins
+- Keep repositories updated
+
+**Safe Operations:**
+- Automatic git versioning of all changes
+- Configuration validation before applying
+- Rollback capability for any change
+- Full audit log of operations
 
 ---
 
-## 🌟 Features
+## 🌟 Key Features
 
 ### 🏠 Home Assistant Integration
-- Full access to HA REST API and WebSocket
+- Full REST API and WebSocket access
 - List all entities and their states
-- Call any HA service
+- Call any Home Assistant service
 - Reload components (automations, scripts, templates)
-- Check configuration validity
+- Configuration validation
 - Real-time state monitoring
 
-### 🔌 Add-on Management (NEW in v2.3.0!) 🔥
-**Complete add-on lifecycle management - install, configure, and control services!**
-- Install/uninstall add-ons (Zigbee2MQTT, Node-RED, ESPHome, etc)
-- Configure add-on options
-- Start/stop/restart add-ons
-- Monitor add-on logs
-- Update add-ons
-- Powered by Supervisor API
-
-### 📦 HACS Management
-**Complete HACS integration via WebSocket - browse 1000+ custom integrations!**
+### 📦 HACS Integration
+**Complete HACS management via WebSocket:**
 - Install HACS automatically from GitHub
 - Search repositories by name, author, or category
 - Install integrations, themes, and plugins
 - Update all installed repositories
 - View repository details (stars, versions, authors)
-- Powered by persistent WebSocket connection
 
 ### 🔧 Component Management
 - Create/Delete Input Helpers (boolean, text, number, datetime, select)
@@ -100,76 +81,125 @@ https://github.com/user-attachments/assets/0df48019-06c0-48dd-82ad-c7fe0734ddb3
 - Backup history (up to 50 commits)
 - Rollback to any previous state
 - View diffs between versions
-- Commit messages for tracking
+- Meaningful commit messages
 
 ### 📊 Monitoring & Troubleshooting
-- Agent logs API with filtering
-- Operation history
-- Real-time status
+- Server logs API with filtering
+- Operation history tracking
+- Real-time status monitoring
 - Health check endpoint
-- System monitoring and analysis
 
 ---
 
-## ⚡ Quick Start (5 minutes)
+## ⚡ Quick Start
 
-### 1. Install Node.js (if not already installed)
+### Docker Images Available
 
-The MCP server requires Node.js to run on the machine where Cursor is installed.
+The server is available as pre-built Docker images:
+- **Docker Hub:** `itsmrshow/home-assistant-mcp-server:latest`
+- **GitHub Container Registry:** `ghcr.io/itsmrshow/home-assistant-mcp-server:latest`
 
-- Check if Node.js is already installed: open a terminal and run `node --version`.
-- If Node.js is not installed, or the version is below **v18.0.0**, download and install it from [nodejs.org](https://nodejs.org/).
-- After installation, verify it with `node --version` — it should show **v18.0.0** or higher.
+**Supported Platforms:**
+- `linux/amd64` (Intel/AMD 64-bit)
+- `linux/arm64` (ARM 64-bit - Raspberry Pi 4, Apple Silicon, etc.)
+- `linux/arm/v7` (ARM 32-bit - Raspberry Pi 3, etc.)
 
-**Important:** Install Node.js on the computer where Cursor is running, **not** on the Home Assistant server.
+### Prerequisites
 
+- Docker and Docker Compose installed
+- Home Assistant running (any installation type)
+- A Home Assistant Long-Lived Access Token
 
-[YouTube Installation guide: how to install the Home Assistant Cursor Agent](https://youtu.be/RZNkNZnhMrc)
-  
-### 2. Add Repository
+### 1. Get a Home Assistant Long-Lived Access Token
 
-Open your **Home Assistant UI** (usually http://homeassistant.local:8123):
+1. Open your Home Assistant UI
+2. Go to your profile (click your username in the sidebar)
+3. Scroll down to "Long-Lived Access Tokens"
+4. Click "Create Token"
+5. Give it a name (e.g., "MCP Server")
+6. Copy the token (you won't see it again!)
 
-1. Go to **Settings** → **Add-ons** → **Add-on Store** → **⋮** → **Repositories** (usually http://homeassistant.local:8123/hassio/dashboard )
-2. Add: `https://github.com/Coolver/home-assistant-cursor-agent`
-3. Click **Add**
+### 2. Choose Your Installation Method
 
-### 3. Install and Start Add-on
+#### Option A: Using Pre-built Docker Image (Recommended)
 
-Still in **Home Assistant UI**:
+Create a `docker-compose.yml` file:
+```yaml
+services:
+  ha-mcp-server:
+    image: itsmrshow/home-assistant-mcp-server:latest
+    container_name: ha-mcp-server
+    ports:
+      - "8099:8099"
+    volumes:
+      - ./config:/config:rw
+    environment:
+      - PORT=8099
+      - LOG_LEVEL=info
+      - ENABLE_GIT=true
+      - AUTO_BACKUP=true
+      - MAX_BACKUPS=50
+      - HA_URL=http://YOUR_HOME_ASSISTANT_IP:8123
+      - HA_TOKEN=your_long_lived_access_token_here
+      - CONFIG_PATH=/config
+    restart: unless-stopped
+```
 
-1. Refresh the page
-2. Find **HA Cursor Agent** → Click **INSTALL**
-3. Wait for installation to complete
-4. Go to **Configuration** tab → Keep defaults → **SAVE**
-5. Go to **Info** tab → **Start on boot: ON** → **START**
-6. **Wait for startup** (~10 seconds)
+Then start it:
+```bash
+docker-compose up -d
+```
 
-### 4. Setup MCP in Cursor
+#### Option B: Build from Source
 
-**Get configuration from Home Assistant:**
-1. In **Home Assistant UI**, go to **Settings** → **Add-ons** → **HA Cursor Agent**
-2. Click **"Open Web UI"** button
-3. You'll see this interface:
+```bash
+# Clone this repository
+git clone https://github.com/itsmrshow/home-assistant-mcp-server.git
+cd home-assistant-mcp-server
 
-<p align="center">
-  <img src=".github/images/ingress-panel.jpg" alt="HA Cursor Agent Ingress Panel" width="700">
-</p>
+# Copy environment template
+cp .env.example .env
 
-4. Click **"Copy Configuration to Clipboard"** button
-5. Configuration copied to clipboard! ✅
+# Edit .env file with your details
+nano .env
+```
 
-**Add to Cursor AI:**
-1. Open **Cursor** editor
-2. Go to **Settings** (Cmd/Ctrl + ,)
-3. Click **Tools & MCP** in the sidebar
-4. Click **New MCP Server**
-5. **Paste** the configuration you copied
-6. Click **Save**
-7. **Restart Cursor** completely (Cmd/Ctrl + Q and reopen)
+Edit `.env` and set:
+```bash
+HA_URL=http://YOUR_HOME_ASSISTANT_IP:8123
+HA_TOKEN=your_long_lived_access_token_here
+HA_AGENT_KEY=  # Leave empty to auto-generate, or set your own
+```
 
-**For reference, here's what the configuration looks like:**
+**Important:** Replace `YOUR_HOME_ASSISTANT_IP` with:
+- Your Home Assistant's IP address (e.g., `http://192.168.1.100:8123`)
+- Or `http://homeassistant.local:8123` if mDNS is working on your network
+- Or `http://host.docker.internal:8123` if HA is on the same machine
 
+### 3. Start the Server
+
+```bash
+# Start with Docker Compose
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Check health
+curl http://localhost:8099/api/health
+```
+
+The server will:
+- Start on port 8099
+- Auto-generate an API key if not provided
+- Display the API key in the logs
+- Save it to `config/.ha_mcp_server_key`
+
+### 4. Configure Your MCP Client
+
+#### For Cursor
+
+Add to `~/.cursor/mcp.json`:
 ```json
 {
   "mcpServers": {
@@ -177,721 +207,276 @@ Still in **Home Assistant UI**:
       "command": "npx",
       "args": ["-y", "@coolver/home-assistant-mcp@latest"],
       "env": {
-        "HA_AGENT_URL": "http://homeassistant.local:8099",
-        "HA_AGENT_KEY": "YOUR_API_KEY_HERE"
+        "HA_AGENT_URL": "http://localhost:8099",
+        "HA_AGENT_KEY": "your_generated_api_key_here"
       }
     }
   }
 }
 ```
 
-**Note:** The Web UI provides this exact configuration ready to copy - no need to type it manually!
+#### For Claude Desktop
 
-Done! Cursor AI is now connected to your Home Assistant 🎉
-
-### 5. Test Connection
-
-**Test that everything works:**
-
-Open Cursor and send this message to AI:
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+```json
+{
+  "mcpServers": {
+    "home-assistant": {
+      "command": "npx",
+      "args": ["-y", "@coolver/home-assistant-mcp@latest"],
+      "env": {
+        "HA_AGENT_URL": "http://localhost:8099",
+        "HA_AGENT_KEY": "your_generated_api_key_here"
+      }
+    }
+  }
+}
 ```
-Connect to my Home Assistant and show me:
-1. List of all my climate entities
-2. Current status of the HA Cursor Agent
 
-This will verify the MCP connection is working.
-```
+**Get your API key:**
+- Check the Docker logs: `docker-compose logs | grep "API Key"`
+- Or read the file: `cat config/.ha_mcp_server_key`
 
-If AI successfully returns your entities and agent status, everything is working! ✅
+### 5. Test It!
 
-**Troubleshooting:** If connection fails, check:
-- Add-on is running in Home Assistant
-- Cursor was fully restarted
-- Configuration was pasted correctly
+Restart your AI client and try:
+- "List my Home Assistant entities"
+- "Show me all my lights"
+- "Create an automation to turn on lights at sunset"
 
 ---
 
-## 🤖 Using with Cursor AI
+## 🔧 Configuration
 
-This add-on enables **Cursor AI to autonomously manage your Home Assistant** through natural language - no manual copy-pasting needed!
+### Environment Variables
 
-### ⚠️ Important Disclaimer
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `HA_URL` | Home Assistant URL | `http://homeassistant.local:8123` | Yes |
+| `HA_TOKEN` | Long-Lived Access Token | - | Yes |
+| `HA_AGENT_KEY` | API key for MCP clients | Auto-generated | No |
+| `PORT` | Server port | `8099` | No |
+| `LOG_LEVEL` | Logging level | `info` | No |
+| `ENABLE_GIT` | Enable git versioning | `true` | No |
+| `AUTO_BACKUP` | Auto backup on changes | `true` | No |
+| `MAX_BACKUPS` | Maximum git commits | `50` | No |
+| `CONFIG_PATH` | Config storage path | `/config` | No |
 
-**This tool is designed for experienced Home Assistant users who understand what they're doing.** 
+### Docker Compose Options
 
-- ✅ **Always review changes** before applying them to production systems
-- ⚠️ **Cursor AI can accidentally break your configuration** if given incorrect instructions or outdated information
-- 💾 **Git versioning is enabled by default** - all changes are backed up and can be rolled back
-- 🔄 **Test in a safe environment first** if you're new to AI-driven automation
-- 📖 **Verify syntax and compatibility** with your Home Assistant version
-
-**Use at your own risk. The automatic backup system minimizes risk but doesn't eliminate it.**
-
-### Start Using
-
-Once connected, just describe what you want in natural language:
-
-```
-Show me all my climate entities and their current states
-```
-
-```
-Analyze my automations and suggest optimizations
-```
-
-```
-Create a smart lighting automation for movie mode
-```
-
-Cursor AI will autonomously read your configuration, create components, and deploy everything automatically!
-
-**That's it!** Cursor AI will use the MCP protocol to communicate with your Home Assistant.
-
-**Learn more:** [MCP Home Assistant on GitHub](https://github.com/Coolver/home-assistant-mcp) | [NPM Package](https://www.npmjs.com/package/@coolver/home-assistant-mcp)
-
-### Real-World Examples
-
-**Build Smart Climate Control:**
-```
-Install a smart climate control system for my TRV radiators. 
-Analyze my current devices, create automations for efficient heating 
-with predictive shutdown, buffer radiators, and adaptive cooldowns.
-Set up monitoring sensors and dashboard.
-```
-
-**AI will autonomously:**
-- Detect all your TRV entities by analyzing Home Assistant
-- Create 10+ automations for intelligent heating control
-- Add 9 input helpers for system state management
-- Generate 10 template sensors for monitoring
-- Create 5 scripts for boiler and buffer control
-- Build Lovelace dashboard with all metrics
-- Test and deploy everything
-- **All tailored to YOUR specific TRVs and configuration!**
-
-**Optimize Existing System:**
-```
-My heating wastes energy. Analyze my current climate automations 
-and optimize for efficiency while maintaining comfort.
-```
-
-**Debug Issues:**
-```
-My bedroom lights automation isn't working. Check the logs, 
-find the problem, and fix it.
-```
-
-### What Cursor AI Can Do
-
-With this add-on and [MCP integration](https://github.com/Coolver/home-assistant-mcp), Cursor AI can:
-
-✅ **Analyze YOUR configuration** - detects your actual devices and entities  
-✅ **Create complex systems autonomously** - 10+ interconnected automations  
-✅ **Tailored to your setup** - uses your specific entity IDs and device capabilities  
-✅ **Automatic backups** - every change is Git-versioned  
-✅ **Intelligent debugging** - reads logs, finds issues, fixes them  
-✅ **Error recovery** - can rollback if something goes wrong  
-✅ **End-to-end deployment** - from analysis to production  
-
-**Stop writing YAML manually! Just describe what you want.** 🚀
-
----
-
-## 🚀 Installation (Detailed)
-
-### Option 1: Via GitHub Repository (Recommended)
-
-1. Open **Settings** → **Add-ons** → **Add-on Store**
-2. Click **⋮** (three-dot overflow menu in top right corner)
-3. Select **Repositories**
-4. Add repository URL: `https://github.com/Coolver/home-assistant-cursor-agent`
-5. Click **Add**
-6. Refresh the page - find **HA Cursor Agent** in the list
-7. Click **INSTALL**
-8. Configure and start
-
-### Option 2: Manual Installation (Alternative)
-
-1. **Copy this folder** to `/addons/home-assistant-cursor-agent/` on your HA system via SSH/Samba/File Editor
-
-2. **Reload Add-on repositories:**
-   - Supervisor → Add-on Store → ⋮ → Check for updates
-
-3. **Install the Add-on:**
-   - Find "HA Cursor Agent" in Local Add-ons
-   - Click **INSTALL**
-
-4. **Configure:**
-   - Set port (default: 8099)
-   - Enable Git versioning (recommended)
-   - Set log level
-
-5. **Start the Add-on**
-
-6. **Get your API token:**
-   - The add-on uses Home Assistant's Supervisor token
-   - For external access, use your Long-Lived Access Token
-
----
-
-## ⚙️ Configuration
-
-```yaml
-port: 8099                    # API port
-log_level: info               # Logging: debug, info, warning, error
-enable_git_versioning: true   # Enable automatic backups
-auto_backup: true             # Auto-commit on changes
-max_backups: 50               # Maximum commits to keep
-```
+The `docker-compose.yml` allows you to:
+- Change the exposed port (default: 8099)
+- Mount your Home Assistant config for direct file access
+- Adjust git versioning settings
+- Configure logging levels
 
 ---
 
 ## 📚 API Documentation
 
-### Interactive Documentation
+Once running, visit:
+- **Interactive Swagger Docs:** http://localhost:8099/docs
+- **ReDoc Documentation:** http://localhost:8099/redoc
+- **Health Check:** http://localhost:8099/api/health
 
-Once installed, access:
+### Main API Endpoints
 
-- **Swagger UI:** `http://homeassistant.local:8099/docs`
-- **ReDoc:** `http://homeassistant.local:8099/redoc`
+**Entities:**
+- `GET /api/entities` - List all entities
+- `GET /api/entities/states` - Get all entity states
+- `POST /api/entities/call_service` - Call any HA service
 
-### Quick Reference
+**Automations:**
+- `GET /api/automations` - List automations
+- `POST /api/automations` - Create automation
+- `DELETE /api/automations/{id}` - Delete automation
 
-#### Files API (`/api/files`)
+**Scripts:**
+- `GET /api/scripts` - List scripts
+- `POST /api/scripts` - Create script
+- `DELETE /api/scripts/{id}` - Delete script
 
-```bash
-# List files
-GET /api/files/list?directory=&pattern=*.yaml
+**Helpers:**
+- `GET /api/helpers` - List input helpers
+- `POST /api/helpers/input_boolean` - Create boolean helper
+- `POST /api/helpers/input_text` - Create text helper
+- `DELETE /api/helpers/{entity_id}` - Delete helper
 
-# Read file
-GET /api/files/read?path=configuration.yaml
+**Files:**
+- `GET /api/files/list` - List files in config
+- `GET /api/files/read` - Read file content
+- `POST /api/files/write` - Write file
+- `DELETE /api/files/delete` - Delete file
 
-# Write file
-POST /api/files/write
-{
-  "path": "automations.yaml",
-  "content": "...",
-  "create_backup": true
-}
+**HACS:**
+- `POST /api/hacs/install` - Install HACS
+- `GET /api/hacs/repositories` - Search repositories
+- `POST /api/hacs/install_repository` - Install integration
 
-# Append to file
-POST /api/files/append
-{
-  "path": "scripts.yaml",
-  "content": "\nmy_script:\n  ..."
-}
+**System:**
+- `POST /api/system/reload` - Reload HA components
+- `POST /api/system/check_config` - Validate configuration
+- `GET /api/system/info` - Get HA system info
 
-# Delete file
-DELETE /api/files/delete?path=old_file.yaml
-
-# Parse YAML
-GET /api/files/parse_yaml?path=configuration.yaml
-```
-
-#### Entities API (`/api/entities`)
-
-```bash
-# List all entities
-GET /api/entities/list
-
-# Filter by domain
-GET /api/entities/list?domain=climate
-
-# Search entities
-GET /api/entities/list?search=bedroom
-
-# Get specific entity state
-GET /api/entities/state/climate.bedroom_trv_thermostat
-
-# List all services
-GET /api/entities/services
-```
-
-#### Helpers API (`/api/helpers`)
-
-```bash
-# Create helper
-POST /api/helpers/create
-{
-  "domain": "input_boolean",
-  "entity_id": "my_switch",
-  "name": "My Switch",
-  "config": {
-    "icon": "mdi:toggle-switch",
-    "initial": false
-  }
-}
-
-# Delete helper
-DELETE /api/helpers/delete/input_boolean.my_switch
-```
-
-#### Automations API (`/api/automations`)
-
-```bash
-# List automations
-GET /api/automations/list
-
-# Create automation
-POST /api/automations/create
-{
-  "id": "my_automation",
-  "alias": "My Automation",
-  "trigger": [...],
-  "action": [...]
-}
-
-# Delete automation
-DELETE /api/automations/delete/my_automation
-```
-
-#### Scripts API (`/api/scripts`)
-
-```bash
-# List scripts
-GET /api/scripts/list
-
-# Create script
-POST /api/scripts/create
-{
-  "entity_id": "my_script",
-  "alias": "My Script",
-  "sequence": [...]
-}
-
-# Delete script
-DELETE /api/scripts/delete/my_script
-```
-
-#### System API (`/api/system`)
-
-```bash
-# Reload component
-POST /api/system/reload?component=automations
-# Components: automations, scripts, templates, core, all
-
-# Check configuration
-POST /api/system/check_config
-
-# Get HA config
-GET /api/system/config
-
-# Restart HA (⚠️ use carefully!)
-POST /api/system/restart
-```
-
-#### Backup API (`/api/backup`)
-
-```bash
-# Create backup (commit)
-POST /api/backup/commit
-{
-  "message": "Before climate control installation"
-}
-
-# Get backup history
-GET /api/backup/history?limit=20
-
-# Rollback to commit
-POST /api/backup/rollback
-{
-  "commit_hash": "a1b2c3d4"
-}
-
-# Get diff
-GET /api/backup/diff
-GET /api/backup/diff?commit1=a1b2c3d4
-```
-
-#### Logs API (`/api/logs`)
-
-```bash
-# Get agent logs
-GET /api/logs/?limit=100
-GET /api/logs/?level=ERROR
-
-# Clear logs
-DELETE /api/logs/clear
-```
+**Backup & Git:**
+- `GET /api/backup/history` - View git history
+- `POST /api/backup/rollback` - Rollback to commit
+- `GET /api/backup/diff` - View changes
 
 ---
 
-## 🔐 Authentication
-
-All API endpoints (except `/api/health`) require authentication.
-
-### For MCP Clients (Cursor AI)
-
-The add-on uses **Agent Key** authentication:
-
-1. Get your Agent Key from **Web UI** (Settings → Add-ons → HA Cursor Agent → Open Web UI)
-2. Configure in Cursor MCP settings with `HA_AGENT_KEY`
-3. Agent Key is auto-generated on first start
-
-### For Direct API Access
-
-Add header to requests:
-```
-Authorization: Bearer YOUR_AGENT_KEY
-```
-
-**Example with curl:**
-
-```bash
-curl -H "Authorization: Bearer YOUR_AGENT_KEY" \
-     http://homeassistant.local:8099/api/entities/list
-```
-
-### Internal Operations
-
-The add-on automatically uses the **Supervisor Token** for Home Assistant API operations. No configuration needed.
-
----
-
-## 💡 Usage Examples
-
-### Example 1: Read configuration
-
-```python
-import requests
-
-headers = {"Authorization": "Bearer YOUR_AGENT_KEY"}
-url = "http://homeassistant.local:8099"
-
-# Read configuration.yaml
-response = requests.get(
-    f"{url}/api/files/read",
-    params={"path": "configuration.yaml"},
-    headers=headers
-)
-config = response.json()['content']
-print(config)
-```
-
-### Example 2: Create automation
-
-```python
-# Create backup first
-requests.post(
-    f"{url}/api/backup/commit",
-    json={"message": "Before adding automation"},
-    headers=headers
-)
-
-# Create automation
-automation = {
-    "id": "test_automation",
-    "alias": "Test Automation",
-    "trigger": [
-        {"platform": "state", "entity_id": "sensor.temperature", "to": "20"}
-    ],
-    "action": [
-        {"service": "light.turn_on", "target": {"entity_id": "light.bedroom"}}
-    ]
-}
-
-response = requests.post(
-    f"{url}/api/automations/create",
-    json=automation,
-    headers=headers
-)
-print(response.json())
-```
-
-### Example 3: List climate entities
-
-```python
-# Get all climate entities
-response = requests.get(
-    f"{url}/api/entities/list",
-    params={"domain": "climate"},
-    headers=headers
-)
-
-climates = response.json()['entities']
-for climate in climates:
-    print(f"{climate['entity_id']}: {climate['attributes']['current_temperature']}°C")
-```
-
-### Example 4: Rollback if something went wrong
-
-```python
-# Get history
-response = requests.get(
-    f"{url}/api/backup/history",
-    headers=headers
-)
-commits = response.json()['commits']
-
-# Rollback to previous commit
-requests.post(
-    f"{url}/api/backup/rollback",
-    json={"commit_hash": commits[1]['hash']},  # Previous commit
-    headers=headers
-)
-
-# Restart HA to apply
-requests.post(
-    f"{url}/api/system/restart",
-    headers=headers
-)
-```
-
----
-
-## 🔍 Monitoring
-
-### Check Agent Health
-
-```bash
-# No auth required for health check
-curl http://homeassistant.local:8099/api/health
-```
-
-**Example response:**
-```json
-{
-  "status": "healthy",
-  "version": "2.0.1"
-}
-```
-
-### View Agent Logs
-
-```bash
-curl -H "Authorization: Bearer YOUR_AGENT_KEY" \
-     http://homeassistant.local:8099/api/logs/?limit=50
-```
-
-### View Backup History
-
-```bash
-curl -H "Authorization: Bearer YOUR_AGENT_KEY" \
-     http://homeassistant.local:8099/api/backup/history
-```
-
----
-
-## 🛡️ Security
-
-### Safety Features
-
-- ✅ **Path validation** - Cannot access files outside `/config`
-- ✅ **Authentication required** - All endpoints (except health) require token
-- ✅ **Automatic backups** - Git commits before modifications
-- ✅ **Rollback capability** - Restore any previous state
-- ✅ **Configuration validation** - Check before applying
-- ✅ **Audit logs** - Track all operations
+## 🔒 Security
 
 ### Best Practices
 
-1. **Always backup** before major changes
-2. **Check config** before reloading
-3. **Review logs** after operations
-4. **Use rollback** if something breaks
-5. **Test in dev environment** first
+1. **Secure Your Tokens:**
+   - Never commit `.env` file to git (already in `.gitignore`)
+   - Use strong Long-Lived Access Tokens
+   - Rotate tokens periodically
+
+2. **Network Security:**
+   - Run on trusted network only
+   - Consider using a reverse proxy with HTTPS
+   - Use firewall rules to restrict access
+
+3. **API Key Management:**
+   - Keep `HA_AGENT_KEY` secret
+   - Don't share in public repositories
+   - Regenerate if compromised
+
+4. **Docker Security:**
+   - Keep base images updated
+   - Review mounted volumes
+   - Run with minimal permissions
 
 ---
 
-## 🔧 Development
+## 🛠️ Development
 
-### Project Structure
+### Build from Source
 
-```
-home-assistant-cursor-agent/
-├── config.yaml              # Add-on configuration
-├── Dockerfile               # Container definition
-├── run.sh                   # Startup script
-├── requirements.txt         # Python dependencies
-├── app/
-│   ├── main.py             # FastAPI application
-│   ├── auth.py             # API authentication
-│   ├── ingress_panel.py    # Web UI panel
-│   ├── api/                # API endpoints
-│   │   ├── files.py        # File operations
-│   │   ├── entities.py     # Entity states
-│   │   ├── helpers.py      # Helper management
-│   │   ├── automations.py  # Automation CRUD
-│   │   ├── scripts.py      # Script CRUD
-│   │   ├── system.py       # System operations
-│   │   ├── backup.py       # Git versioning
-│   │   ├── logs.py         # Log access
-│   │   ├── addons.py       # Add-on management
-│   │   ├── hacs.py         # HACS integration
-│   │   ├── lovelace.py     # Dashboard management
-│   │   └── ai_instructions.py # AI guidance docs
-│   ├── services/           # Business logic
-│   │   ├── ha_client.py    # HA REST API client
-│   │   ├── ha_websocket.py # HA WebSocket client
-│   │   ├── supervisor_client.py # Supervisor API
-│   │   ├── file_manager.py # File operations
-│   │   └── git_manager.py  # Git versioning
-│   ├── models/             # Pydantic models
-│   │   └── schemas.py
-│   ├── utils/              # Utilities
-│   │   ├── logger.py       # Logging setup
-│   │   └── yaml_editor.py  # YAML manipulation
-│   ├── templates/          # HTML templates
-│   │   └── ingress_panel.html
-│   └── ai_instructions/    # AI agent guidance
-├── tests/                  # Test suites
-├── CHANGELOG.md
-└── README.md
+```bash
+# Clone the repository
+git clone https://github.com/itsmrshow/home-assistant-mcp-server.git
+cd home-assistant-mcp-server
+
+# Build the Docker image
+docker build -t ha-mcp-server .
+
+# Run locally
+docker run -p 8099:8099 \
+  -e HA_URL=http://YOUR_HA_IP:8123 \
+  -e HA_TOKEN=your_token \
+  -v $(pwd)/config:/config \
+  ha-mcp-server
 ```
 
-### Local Development
+### Local Python Development
 
 ```bash
 # Install dependencies
 pip install -r requirements.txt
 
 # Set environment variables
-export CONFIG_PATH="/path/to/ha/config"
-export HA_AGENT_KEY="your_dev_key"
-export HA_URL="http://homeassistant.local:8123"
-export PORT=8099
-export LOG_LEVEL=DEBUG
-export ENABLE_GIT=true
+export HA_URL=http://YOUR_HA_IP:8123
+export HA_TOKEN=your_token
+export CONFIG_PATH=./config
 
-# Run
-python -m uvicorn app.main:app --reload --port 8099
+# Run the server
+python -m app.main
 ```
-
----
-
-## 🎯 Use Cases
-
-### For Cursor AI
-
-This add-on enables Cursor AI to:
-
-1. **Autonomously install systems** - AI reads current config, creates all components, tests
-2. **Debug issues** - AI reads logs, configs, entity states, fixes problems
-3. **Evolve configurations** - AI improves automations based on usage patterns
-4. **Safe experimentation** - Git versioning allows instant rollback
-5. **Complete automation** - No manual steps required!
-
-### Example Workflow
-
-```
-User: "Install smart climate control system"
-   ↓
-AI via Agent:
-1. Reads current TRV entities
-2. Creates backup
-3. Creates 7 input helpers
-4. Adds 12 template sensors to configuration.yaml
-5. Creates 5 scripts
-6. Creates 10 automations
-7. Reloads all components
-8. Validates installation
-9. Shows dashboard YAML for user to add
-   ↓
-User: "Something's wrong, rollback!"
-   ↓
-AI via Agent:
-1. Gets backup history
-2. Rolls back to previous commit
-3. Restarts HA
-4. Verifies restoration
-```
-
----
-
-## 📊 API Overview
-
-| Endpoint | Methods | Description |
-|----------|---------|-------------|
-| `/api/files` | GET, POST, DELETE | File operations |
-| `/api/entities` | GET | Entity states and services |
-| `/api/helpers` | POST, DELETE | Input helper management |
-| `/api/automations` | GET, POST, DELETE | Automation management |
-| `/api/scripts` | GET, POST, DELETE | Script management |
-| `/api/system` | POST, GET | System operations |
-| `/api/backup` | GET, POST | Git versioning |
-| `/api/logs` | GET, DELETE | Agent logs |
-| `/api/health` | GET | Health check (no auth) |
-| `/docs` | GET | Interactive API docs |
-
----
-
-## ⚠️ Important Notes
-
-### Git Versioning
-
-- Creates `.git` folder in `/config` if not exists
-- Auto-commits on every change (if enabled)
-- Stores up to 50 commits (configurable)
-- Commit messages include operation details
-
-### File Operations
-
-- All paths are relative to `/config`
-- Cannot access files outside config directory
-- Automatic backup before write/delete
-- YAML validation on parse
-
-### Service Calls
-
-- Full access to Home Assistant API
-- Can call any service (lights, climate, system, etc.)
-- Requires proper entity IDs
 
 ---
 
 ## 🐛 Troubleshooting
 
-### Add-on won't start
+### Server Won't Start
 
-**Check logs:** Supervisor → HA Cursor Agent → Logs
+**Check logs:**
+```bash
+docker-compose logs -f
+```
 
-Common issues:
-- Port 8099 already in use
-- Invalid configuration
-- Missing permissions
+**Common issues:**
+- Missing `HA_TOKEN` in `.env`
+- Wrong `HA_URL` (check IP address and port)
+- Port 8099 already in use (change in `docker-compose.yml`)
 
-### API returns 401 Unauthorized
+### Can't Connect to Home Assistant
 
-- Check Agent Key is correct
-- Regenerate key if needed: Settings → Add-ons → HA Cursor Agent → Open Web UI
-- Ensure Authorization header is present
-- Format: `Authorization: Bearer YOUR_AGENT_KEY`
+**Test connection:**
+```bash
+curl -H "Authorization: Bearer YOUR_TOKEN" http://YOUR_HA_IP:8123/api/
+```
 
-### File operations fail
+**Verify:**
+- Home Assistant is running and accessible
+- Token is valid and hasn't expired
+- URL is correct (include `http://` and port)
+- No firewall blocking the connection
 
-- Check file paths are relative to `/config`
-- Ensure files exist for read/delete operations
-- Check YAML syntax for parse errors
+### MCP Client Can't Connect
 
-### Git versioning not working
+**Verify:**
+- Server is running (`docker-compose ps`)
+- API key is correct (check logs or file)
+- URL in MCP config matches server location
+- Client has been restarted after config changes
 
-- Check `enable_git_versioning` is `true`
-- View logs for Git errors
-- Ensure `/config` is writable
+### Changes Not Persisting
 
----
-
-## 📞 Support
-
-- **Issues:** GitHub Issues
-- **Documentation:** `/docs` endpoint (Swagger UI)
-- **Logs:** `/api/logs/` endpoint
-
----
-
-## 📜 License
-
-MIT License - See LICENSE file
+**Check:**
+- Config directory is properly mounted
+- Docker container has write permissions
+- Git is enabled (`ENABLE_GIT=true`)
 
 ---
 
-## 🙏 Credits
+## 🤝 Contributing
 
-Created for seamless integration between **Cursor AI** and **Home Assistant**.
+Contributions are welcome! Please:
 
-Enables AI to autonomously manage smart home configurations! 🏠🤖
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
 ---
 
-**Ready to give your AI full control of Home Assistant? Install now!** 🚀
+## 📝 Changelog
 
+### Version 3.0.0 (Current)
+- 🔄 Forked from home-assistant-cursor-agent
+- 🐳 Converted to standalone Docker container
+- 🏠 Added support for any Home Assistant installation type
+- 🤖 Generalized for any MCP-compatible AI client
+- ❌ Removed Home Assistant OS add-on dependencies
+- ❌ Removed Supervisor API integration
+- ✨ Simplified authentication using only HA tokens
+- 📝 Updated documentation for standalone deployment
+
+---
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) file for details
+
+---
+
+## 🙏 Acknowledgments
+
+- **Original Project:** [home-assistant-cursor-agent](https://github.com/Coolver/home-assistant-cursor-agent) by [Coolver](https://github.com/Coolver)
+- **Model Context Protocol:** [Anthropic MCP](https://github.com/anthropics/mcp)
+- **Home Assistant:** [Home Assistant Project](https://www.home-assistant.io/)
+
+---
+
+## 💬 Support
+
+- **Issues:** [GitHub Issues](https://github.com/itsmrshow/home-assistant-mcp-server/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/itsmrshow/home-assistant-mcp-server/discussions)
+
+---
+
+**Made with ❤️ for the Home Assistant and AI community**

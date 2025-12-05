@@ -1,0 +1,30 @@
+services:
+  ha-cursor-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BUILD_FROM: python:3.11-alpine
+    container_name: ha-cursor-agent
+    ports:
+      - "8100:8099"
+    volumes:
+      - ./config:/config:rw  # Mount your Home Assistant config directory here
+    environment:
+      - PORT=8099
+      - LOG_LEVEL=info
+      - ENABLE_GIT=true
+      - AUTO_BACKUP=true
+      - MAX_BACKUPS=50
+      - HA_URL=${HA_URL}
+      - HA_TOKEN=${HA_TOKEN}
+      - HA_AGENT_KEY=${HA_AGENT_KEY}
+      - CONFIG_PATH=/config
+    command: ["./entrypoint.sh"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8099/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s

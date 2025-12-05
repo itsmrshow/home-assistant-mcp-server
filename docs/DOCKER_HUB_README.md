@@ -1,3 +1,7 @@
+<div align="center">
+
+<img src="https://raw.githubusercontent.com/itsmrshow/home-assistant-mcp-server/main/docs/icon_transparent.png" alt="Home Assistant MCP Server" width="200"/>
+
 # Home Assistant MCP Server
 
 **A standalone MCP (Model Context Protocol) server that enables AI assistants to interact with Home Assistant** 🏠🤖
@@ -5,6 +9,8 @@
 [![GitHub](https://img.shields.io/badge/GitHub-itsmrshow%2Fhome--assistant--mcp--server-blue?logo=github)](https://github.com/itsmrshow/home-assistant-mcp-server)
 [![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/itsmrshow/home-assistant-mcp-server)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/itsmrshow/home-assistant-mcp-server/blob/main/LICENSE)
+
+</div>
 
 ## What is this?
 

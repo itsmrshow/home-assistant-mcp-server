@@ -1,3 +1,7 @@
+<div align="center">
+
+<img src="docs/icon_transparent.png" alt="Home Assistant MCP Server" width="200"/>
+
 # Home Assistant MCP Server
 
 [![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/itsmrshow/home-assistant-mcp-server)
@@ -6,6 +10,8 @@
 [![GitHub Container Registry](https://img.shields.io/badge/ghcr-available-blue)](https://github.com/itsmrshow/home-assistant-mcp-server/pkgs/container/home-assistant-mcp-server)
 
 **A standalone MCP (Model Context Protocol) server that enables AI assistants to interact with Home Assistant** 🏠🤖
+
+</div>
 
 > **Note:** This is a fork of [home-assistant-cursor-agent](https://github.com/Coolver/home-assistant-cursor-agent) by Coolver, adapted to work as a standalone Docker container with any Home Assistant installation (not just Home Assistant OS) and any AI client that supports the MCP protocol (not just Cursor).
 

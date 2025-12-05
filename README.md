@@ -113,8 +113,6 @@ https://github.com/user-attachments/assets/0df48019-06c0-48dd-82ad-c7fe0734ddb3
 
 ## ⚡ Quick Start (5 minutes)
 
-[YouTube Installation guide: how to install the Home Assistant Cursor Agent](https://youtu.be/RZNkNZnhMrc)
-
 ### 1. Add Repository
 
 Open your **Home Assistant UI** (usually http://homeassistant.local:8123):
@@ -145,7 +143,7 @@ You'll see this interface:
 8. That’s it — you’re ready to start working with your Home Assistant scripts, automations and dashboards using AI.
 If you find this project useful and want to support its development, please consider giving it a [GitHub Star](https://github.com/Coolver/home-assistant-cursor-agent) ⭐
 
-
+[YouTube Installation guide: how to install the Home Assistant Cursor Agent](https://youtu.be/RZNkNZnhMrc)
 
 ---
 

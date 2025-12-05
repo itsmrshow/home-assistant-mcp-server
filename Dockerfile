@@ -11,12 +11,15 @@ RUN apk add --no-cache \
     bash \
     curl \
     jq \
+    libffi \
+    openssl \
     gcc \
     musl-dev \
     python3-dev \
     libffi-dev \
     openssl-dev \
-    cargo
+    cargo \
+    rust
 
 # Set working directory
 WORKDIR /app
@@ -26,9 +29,10 @@ COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip3 install --no-cache-dir -r requirements.txt && \
-    # Remove build dependencies to reduce image size
-    apk del gcc musl-dev python3-dev libffi-dev openssl-dev cargo
+    pip3 install --no-cache-dir -r requirements.txt
+
+# Remove build dependencies to reduce image size (keep runtime libs)
+RUN apk del gcc musl-dev python3-dev libffi-dev openssl-dev cargo rust
 
 # Copy application
 COPY app/ ./app/

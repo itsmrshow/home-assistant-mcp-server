@@ -1,16 +1,24 @@
-<div align="center">
+<p align="center">
+  <img src="https://raw.githubusercontent.com/itsmrshow/home-assistant-mcp-server/main/docs/icon_transparent.png" alt="Home Assistant MCP Server" width="200"/>
+</p>
 
-<img src="https://raw.githubusercontent.com/itsmrshow/home-assistant-mcp-server/main/docs/icon_transparent.png" alt="Home Assistant MCP Server" width="200"/>
+<h1 align="center">Home Assistant MCP Server</h1>
 
-# Home Assistant MCP Server
+<p align="center">
+  <strong>A standalone MCP (Model Context Protocol) server that enables AI assistants to interact with Home Assistant</strong> 🏠🤖
+</p>
 
-**A standalone MCP (Model Context Protocol) server that enables AI assistants to interact with Home Assistant** 🏠🤖
-
-[![GitHub](https://img.shields.io/badge/GitHub-itsmrshow%2Fhome--assistant--mcp--server-blue?logo=github)](https://github.com/itsmrshow/home-assistant-mcp-server)
-[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/itsmrshow/home-assistant-mcp-server)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/itsmrshow/home-assistant-mcp-server/blob/main/LICENSE)
-
-</div>
+<p align="center">
+  <a href="https://github.com/itsmrshow/home-assistant-mcp-server">
+    <img src="https://img.shields.io/badge/GitHub-itsmrshow%2Fhome--assistant--mcp--server-blue?logo=github" alt="GitHub"/>
+  </a>
+  <a href="https://github.com/itsmrshow/home-assistant-mcp-server">
+    <img src="https://img.shields.io/badge/version-3.0.0-blue.svg" alt="Version"/>
+  </a>
+  <a href="https://github.com/itsmrshow/home-assistant-mcp-server/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-green.svg" alt="License"/>
+  </a>
+</p>
 
 ## What is this?
 

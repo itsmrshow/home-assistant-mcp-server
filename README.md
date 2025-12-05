@@ -129,34 +129,40 @@ The server is available as pre-built Docker images:
 
 #### Option A: Using Pre-built Docker Image (Recommended)
 
-Create a `docker-compose.yml` file:
-```yaml
-services:
-  ha-mcp-server:
-    image: itsmrshow/home-assistant-mcp-server:latest
-    container_name: ha-mcp-server
-    ports:
-      - "8099:8099"
-    volumes:
-      - ./config:/config:rw
-    environment:
-      - PORT=8099
-      - LOG_LEVEL=info
-      - ENABLE_GIT=true
-      - AUTO_BACKUP=true
-      - MAX_BACKUPS=50
-      - HA_URL=http://YOUR_HOME_ASSISTANT_IP:8123
-      - HA_TOKEN=your_long_lived_access_token_here
-      - CONFIG_PATH=/config
-    restart: unless-stopped
+```bash
+# Clone this repository
+git clone https://github.com/itsmrshow/home-assistant-mcp-server.git
+cd home-assistant-mcp-server
+
+# Copy environment template
+cp .env.example .env
+
+# Edit .env file with your details
+nano .env
 ```
+
+Edit `.env` and set:
+```bash
+HA_URL=http://YOUR_HOME_ASSISTANT_IP:8123
+HA_TOKEN=your_long_lived_access_token_here
+HA_AGENT_KEY=  # Leave empty to auto-generate, or set your own
+```
+
+**Important:** Replace `YOUR_HOME_ASSISTANT_IP` with:
+- Your Home Assistant's IP address (e.g., `http://192.168.1.100:8123`)
+- Or `http://homeassistant.local:8123` if mDNS is working on your network
+- Or `http://host.docker.internal:8123` if HA is on the same machine
 
 Then start it:
 ```bash
 docker-compose up -d
 ```
 
+The default `docker-compose.yml` uses the pre-built image from Docker Hub.
+
 #### Option B: Build from Source
+
+If you want to build the image yourself:
 
 ```bash
 # Clone this repository
@@ -182,10 +188,19 @@ HA_AGENT_KEY=  # Leave empty to auto-generate, or set your own
 - Or `http://homeassistant.local:8123` if mDNS is working on your network
 - Or `http://host.docker.internal:8123` if HA is on the same machine
 
+Then build and start:
+```bash
+# Build from source
+docker-compose -f docker/docker-compose.build.yml up -d --build
+
+# View logs
+docker-compose -f docker/docker-compose.build.yml logs -f
+```
+
 ### 3. Start the Server
 
 ```bash
-# Start with Docker Compose
+# Start with Docker Compose (using pre-built image)
 docker-compose up -d
 
 # View logs
@@ -356,9 +371,12 @@ git clone https://github.com/itsmrshow/home-assistant-mcp-server.git
 cd home-assistant-mcp-server
 
 # Build the Docker image
-docker build -t ha-mcp-server .
+docker build -f docker/Dockerfile -t ha-mcp-server .
 
-# Run locally
+# Or use docker-compose
+docker-compose -f docker/docker-compose.build.yml up -d --build
+
+# Run locally with docker run
 docker run -p 8099:8099 \
   -e HA_URL=http://YOUR_HA_IP:8123 \
   -e HA_TOKEN=your_token \

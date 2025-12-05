@@ -1,6 +1,8 @@
 services:
   ha-mcp-server:
-    image: itsmrshow/home-assistant-mcp-server:latest
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: ha-mcp-server
     ports:
       - "8099:8099"

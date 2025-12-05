@@ -5,12 +5,18 @@ FROM python:3.11-alpine
 LABEL maintainer="Home Assistant MCP Server"
 LABEL description="MCP Server for Home Assistant - enables AI clients to manage HA via Model Context Protocol"
 
-# Install system dependencies
+# Install system dependencies and build tools
 RUN apk add --no-cache \
     git \
     bash \
     curl \
-    jq
+    jq \
+    gcc \
+    musl-dev \
+    python3-dev \
+    libffi-dev \
+    openssl-dev \
+    cargo
 
 # Set working directory
 WORKDIR /app
@@ -19,7 +25,10 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip3 install --no-cache-dir -r requirements.txt && \
+    # Remove build dependencies to reduce image size
+    apk del gcc musl-dev python3-dev libffi-dev openssl-dev cargo
 
 # Copy application
 COPY app/ ./app/

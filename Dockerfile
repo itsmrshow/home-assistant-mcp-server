@@ -23,11 +23,10 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy application
 COPY app/ ./app/
-COPY ./run.sh ./
 COPY ./entrypoint.sh ./
 
-# Make scripts executable
-RUN chmod +x run.sh entrypoint.sh
+# Make script executable
+RUN chmod +x entrypoint.sh
 
 # Create config directory
 RUN mkdir -p /config
@@ -40,4 +39,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:8099/api/health || exit 1
 
 # Run
-CMD ["./run.sh"]
+CMD ["./entrypoint.sh"]

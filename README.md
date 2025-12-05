@@ -194,48 +194,37 @@ The server will:
 - Auto-generate an API key if not provided
 - Display the API key in the logs
 - Save it to `config/.ha_mcp_server_key`
+- **Generate MCP client configuration files:**
+  - `config/mcp_client_config.json` - Ready-to-use MCP config
+  - `config/MCP_CLIENT_SETUP.md` - Complete setup instructions
 
 ### 4. Configure Your MCP Client
 
-#### For Cursor
+**The server automatically generates configuration files for you!**
 
-Add to `~/.cursor/mcp.json`:
-```json
-{
-  "mcpServers": {
-    "home-assistant": {
-      "command": "npx",
-      "args": ["-y", "@coolver/home-assistant-mcp@latest"],
-      "env": {
-        "HA_AGENT_URL": "http://localhost:8099",
-        "HA_AGENT_KEY": "your_generated_api_key_here"
-      }
-    }
-  }
-}
-```
+After the server starts, check the `config/` directory for:
+- **`MCP_CLIENT_SETUP.md`** - Complete setup instructions for all AI clients
+- **`mcp_client_config.json`** - Ready-to-use configuration with your API key
 
-#### For Claude Desktop
+#### Quick Setup for Cursor
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
-```json
-{
-  "mcpServers": {
-    "home-assistant": {
-      "command": "npx",
-      "args": ["-y", "@coolver/home-assistant-mcp@latest"],
-      "env": {
-        "HA_AGENT_URL": "http://localhost:8099",
-        "HA_AGENT_KEY": "your_generated_api_key_here"
-      }
-    }
-  }
-}
-```
+1. Copy the contents from `config/mcp_client_config.json`
+2. Paste into `~/.cursor/mcp.json`
+3. Restart Cursor
 
-**Get your API key:**
-- Check the Docker logs: `docker-compose logs | grep "API Key"`
-- Or read the file: `cat config/.ha_mcp_server_key`
+#### Quick Setup for Claude Desktop
+
+1. Copy the contents from `config/mcp_client_config.json`
+2. Paste into:
+   - **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+   - **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+   - **Linux:** `~/.config/Claude/claude_desktop_config.json`
+3. Restart Claude Desktop
+
+**Manual Configuration:**
+If you prefer to manually configure, the files are in:
+- **API Key:** `config/.ha_mcp_server_key`
+- **Or check logs:** `docker-compose logs | grep "API Key"`
 
 ### 5. Test It!
 
@@ -469,6 +458,13 @@ MIT License - see [LICENSE](LICENSE) file for details
 - **Original Project:** [home-assistant-cursor-agent](https://github.com/Coolver/home-assistant-cursor-agent) by [Coolver](https://github.com/Coolver)
 - **Model Context Protocol:** [Anthropic MCP](https://github.com/anthropics/mcp)
 - **Home Assistant:** [Home Assistant Project](https://www.home-assistant.io/)
+
+---
+
+## 📚 Additional Documentation
+
+- **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Upgrading from home-assistant-cursor-agent
+- **[Docker Hub README](docs/DOCKER_HUB_README.md)** - Docker Hub repository description
 
 ---
 

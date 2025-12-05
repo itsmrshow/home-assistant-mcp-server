@@ -71,6 +71,136 @@ API_KEY_FILE = Path('/config/.ha_mcp_server_key')
 API_KEY = None
 
 
+def generate_mcp_config_file(api_key: str):
+    """
+    Generate MCP client configuration file for easy setup.
+    Saves to /config/mcp_client_config.json
+    """
+    import json
+    
+    server_url = os.getenv('MCP_SERVER_URL', 'http://localhost:8099')
+    
+    config = {
+        "mcpServers": {
+            "home-assistant": {
+                "command": "npx",
+                "args": ["-y", "@coolver/home-assistant-mcp@latest"],
+                "env": {
+                    "HA_AGENT_URL": server_url,
+                    "HA_AGENT_KEY": api_key
+                }
+            }
+        }
+    }
+    
+    config_file = Path('/config/mcp_client_config.json')
+    readme_file = Path('/config/MCP_CLIENT_SETUP.md')
+    
+    try:
+        # Save JSON config
+        config_file.write_text(json.dumps(config, indent=2))
+        logger.info(f"💾 MCP client config saved to {config_file}")
+        
+        # Save setup instructions
+        setup_instructions = f"""# MCP Client Configuration
+
+Your Home Assistant MCP Server is running! 🎉
+
+## Quick Setup
+
+The MCP client configuration has been generated and saved to:
+- **Config file:** `/config/mcp_client_config.json`
+- **API Key file:** `/config/.ha_mcp_server_key`
+
+## For Cursor IDE
+
+1. Open or create: `~/.cursor/mcp.json`
+2. Copy the contents from `/config/mcp_client_config.json` into it
+3. Restart Cursor
+4. Test by asking: "List my Home Assistant entities"
+
+## For Claude Desktop
+
+### macOS
+1. Open or create: `~/Library/Application Support/Claude/claude_desktop_config.json`
+2. Copy the contents from `/config/mcp_client_config.json` into it
+3. Restart Claude Desktop
+4. Test by asking: "Show me all my lights"
+
+### Windows
+1. Open or create: `%APPDATA%\\Claude\\claude_desktop_config.json`
+2. Copy the contents from `/config/mcp_client_config.json` into it
+3. Restart Claude Desktop
+4. Test by asking: "Show me all my lights"
+
+### Linux
+1. Open or create: `~/.config/Claude/claude_desktop_config.json`
+2. Copy the contents from `/config/mcp_client_config.json` into it
+3. Restart Claude Desktop
+4. Test by asking: "Show me all my lights"
+
+## Your Configuration
+
+```json
+{json.dumps(config, indent=2)}
+```
+
+## Your API Key
+
+```
+{api_key}
+```
+
+**Important:** Keep this API key secure! Anyone with this key can control your Home Assistant.
+
+## Server Details
+
+- **Server URL:** {server_url}
+- **Health Check:** {server_url}/api/health
+- **API Documentation:** {server_url}/docs
+- **Version:** {SERVER_VERSION}
+
+## Troubleshooting
+
+### Can't connect to server?
+1. Verify server is running: `docker-compose ps`
+2. Check server health: `curl {server_url}/api/health`
+3. Check logs: `docker-compose logs -f`
+
+### MCP client not seeing the server?
+1. Verify the config file path is correct for your OS
+2. Make sure you restarted your AI client after adding the config
+3. Check that the HA_AGENT_URL matches your server location
+4. Verify the API key matches what's in this file
+
+### Need to change the server URL?
+If you're accessing the server from a different machine, update the `HA_AGENT_URL` in your MCP client config to:
+- `http://YOUR_SERVER_IP:8099` (replace YOUR_SERVER_IP with actual IP)
+- Or use a hostname if you have one configured
+
+## Examples to Try
+
+Once connected, try asking your AI client:
+
+- "List all my Home Assistant entities"
+- "Show me my automations"
+- "Create an automation to turn on lights at sunset"
+- "Install HACS"
+- "What scripts do I have?"
+- "Show me my dashboard configuration"
+
+---
+
+For more information, visit: https://github.com/itsmrshow/home-assistant-mcp-server
+"""
+        
+        readme_file.write_text(setup_instructions)
+        logger.info(f"📖 Setup instructions saved to {readme_file}")
+        
+    except Exception as e:
+        logger.warning(f"Failed to save MCP config files: {e}")
+
+
 def get_or_generate_api_key():
     """
     Get or generate API key for MCP client authentication.
@@ -83,12 +213,14 @@ def get_or_generate_api_key():
     # 1. Check environment variable
     if API_KEY_FROM_ENV:
         logger.info("✅ Using API key from environment variable (HA_AGENT_KEY)")
+        generate_mcp_config_file(API_KEY_FROM_ENV)
         return API_KEY_FROM_ENV
     
     # 2. Check file
     if API_KEY_FILE.exists():
         api_key = API_KEY_FILE.read_text().strip()
         logger.info("✅ Using existing API key from file")
+        generate_mcp_config_file(api_key)
         return api_key
     
     # 3. Generate new
@@ -101,16 +233,20 @@ def get_or_generate_api_key():
     except Exception as e:
         logger.warning(f"Failed to save API key to file: {e}")
     
+    # Generate MCP client config files
+    generate_mcp_config_file(api_key)
+    
     # Log the key
     logger.info("=" * 70)
     logger.info("🔑 NEW API KEY GENERATED")
     logger.info("=" * 70)
     logger.info(f"API Key: {api_key}")
     logger.info("")
-    logger.info("📋 Add this to your MCP client configuration:")
-    logger.info('  "env": {')
-    logger.info(f'    "HA_AGENT_KEY": "{api_key}"')
-    logger.info('  }')
+    logger.info("📋 MCP client configuration files have been created:")
+    logger.info("   • /config/mcp_client_config.json")
+    logger.info("   • /config/MCP_CLIENT_SETUP.md")
+    logger.info("")
+    logger.info("📖 Read /config/MCP_CLIENT_SETUP.md for setup instructions")
     logger.info("=" * 70)
     
     return api_key

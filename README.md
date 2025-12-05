@@ -6,8 +6,9 @@
 
 [![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/itsmrshow/home-assistant-mcp-server)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Docker Hub](https://img.shields.io/docker/pulls/itsmrshow/home-assistant-mcp-server)](https://hub.docker.com/r/itsmrshow/home-assistant-mcp-server)
-[![GitHub Container Registry](https://img.shields.io/badge/ghcr-available-blue)](https://github.com/itsmrshow/home-assistant-mcp-server/pkgs/container/home-assistant-mcp-server)
+[![Docker Pulls](https://img.shields.io/docker/pulls/itsmrshow/home-assistant-mcp-server?logo=docker)](https://hub.docker.com/r/itsmrshow/home-assistant-mcp-server)
+[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-itsmrshow%2Fhome--assistant--mcp--server-blue?logo=docker)](https://hub.docker.com/r/itsmrshow/home-assistant-mcp-server)
+[![GitHub Container Registry](https://img.shields.io/badge/ghcr-available-blue?logo=github)](https://github.com/itsmrshow/home-assistant-mcp-server/pkgs/container/home-assistant-mcp-server)
 
 **A standalone MCP (Model Context Protocol) server that enables AI assistants to interact with Home Assistant** 🏠🤖
 

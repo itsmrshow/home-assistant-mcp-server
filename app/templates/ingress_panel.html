@@ -537,7 +537,7 @@
                 <div class="step-number">1</div>
                 <div class="step-content">
                     <h3>Install GitHub Copilot</h3>
-                    <p>Make sure <a href="https://code.visualstudio.com/" target="_blank" style="color: #58a6ff; text-decoration: none;"><strong>VS Code</strong></a> is installed, then install the <a href="https://marketplace.visualstudio.com/items?itemName=GitHub.copilot" target="_blank" style="color: #58a6ff; text-decoration: none;"><strong>GitHub Copilot</strong></a> extension. Copilot Chat is automatically included with GitHub Copilot and required for MCP server integration.</p>
+                    <p>Make sure <a href="https://code.visualstudio.com/" target="_blank" style="color: #58a6ff; text-decoration: none;"><strong>VS Code</strong></a> is installed, then install the <a href="https://marketplace.visualstudio.com/items?itemName=GitHub.copilot" target="_blank" style="color: #58a6ff; text-decoration: none;"><strong>GitHub Copilot</strong></a> extension. <a href="https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat" target="_blank" style="color: #58a6ff; text-decoration: none;"><strong>Copilot Chat</strong></a> is automatically included with GitHub Copilot and required for MCP server integration.</p>
                 </div>
             </div>
         </div>
@@ -649,7 +649,7 @@
                 <div class="step-number">5</div>
                 <div class="step-content">
                     <h3>Allow Server in Copilot Chat</h3>
-                    <p>Open <strong>GitHub Copilot Chat</strong> in VS Code (side panel with the Copilot icon).</p>
+                    <p>Open <a href="https://marketplace.visualstudio.com/items?itemName=GitHub.copilot-chat" target="_blank" style="color: #58a6ff; text-decoration: none;"><strong>GitHub Copilot Chat</strong></a> in VS Code (side panel with the Copilot icon).</p>
                     <p style="margin-top: 8px;">Start a new chat. In the tools / MCP section you should now see a server called <code>home-assistant</code>.</p>
                     <p style="margin-top: 8px;">If Copilot asks whether it's allowed to use this tool/server, click <strong>Allow</strong>.</p>
                 </div>
@@ -711,15 +711,16 @@
             localStorage.setItem('ha-agent-tab', tabName);
         }
         
-        // Load saved tab preference on page load (only if user previously selected one)
-        // By default, Cursor tab is active (set in HTML)
+        // Load saved tab preference on page load
+        // By default, Cursor tab is active (set in HTML with class="active")
         window.addEventListener('DOMContentLoaded', function() {
             const savedTab = localStorage.getItem('ha-agent-tab');
-            // Only switch if user explicitly saved a preference (not on first visit)
+            // Only switch to VS Code if user explicitly selected it
+            // For first-time visitors or if savedTab is 'cursor' or null, keep default (Cursor)
             if (savedTab === 'vscode') {
                 switchTab('vscode');
             }
-            // If savedTab is 'cursor' or null, keep default (Cursor tab active)
+            // Otherwise, Cursor tab remains active (as set in HTML)
         });
         
         // SVG Icon functions

@@ -125,7 +125,13 @@ async def call_service(
         # Some services require return_response as query parameter, not in body
         # Remove it from data if present (e.g., file.read_file)
         # This must be done AFTER merging service_data and target
+        # Also, file.read_file expects 'file_name', not 'path'
         if domain == 'file' and service == 'read_file':
+            # Convert 'path' to 'file_name' if needed (for compatibility)
+            if 'path' in data and 'file_name' not in data:
+                data['file_name'] = data.pop('path')
+                logger.info(f"Converted 'path' to 'file_name' for file.read_file: {data['file_name']}")
+            
             if 'return_response' in data:
                 logger.info(f"Removing return_response from data. Data keys before: {list(data.keys())}")
                 data = {k: v for k, v in data.items() if k != 'return_response'}

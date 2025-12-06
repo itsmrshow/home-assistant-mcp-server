@@ -2,14 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.10.3] - 2025-12-06
-
-### 🐛 Bug Fixes
-
-- ✅ **Fixed script creation error**: Resolved "Config must contain exactly one script" error when MCP sends `commit_message` in request body. The `commit_message` is now properly extracted before format validation.
-- ✅ **Added commit_message support to delete endpoints**: All delete operations (scripts, automations, helpers) now support custom commit messages via query parameter for better Git history tracking.
-
-## [2.10.2] - 2025-12-06
+## [2.10.4] - 2025-12-06
 
 ### ✨ Redesigned Git Versioning & Backup System
 

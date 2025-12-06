@@ -117,25 +117,6 @@ async def call_service(
             if not any(k in data for k in ['entity_id', 'area_id', 'device_id']):
                 data['target'] = target
         
-        # Some services require return_response as query parameter, not in body
-        # Remove it from data if present (e.g., file.read_file)
-        # Also, file.read_file expects 'file_name', not 'path'
-        if domain == 'file' and service == 'read_file':
-            # Convert 'path' to 'file_name' if needed (for compatibility)
-            if 'path' in data and 'file_name' not in data:
-                data['file_name'] = data.pop('path')
-            # Remove return_response from data if present (will be added as query param)
-            if 'return_response' in data:
-                data = {k: v for k, v in data.items() if k != 'return_response'}
-            # Add file_encoding for YAML files if not specified
-            # This helps HA parse YAML and return dict instead of raw string
-            if 'file_encoding' not in data:
-                file_name = data.get('file_name', '')
-                if file_name.endswith('.yaml') or file_name.endswith('.yml'):
-                    data['file_encoding'] = 'YAML'
-                elif file_name.endswith('.json'):
-                    data['file_encoding'] = 'JSON'
-        
         result = await ha_client.call_service(domain, service, data)
         logger.info(f"Service called: {domain}.{service}")
         return {

@@ -776,6 +776,18 @@ AI via Agent:
 
 ## 🐛 Troubleshooting
 
+### "spawn npx ENOENT" error (Cursor / VS Code / Other IDE Console)
+
+This error means Node.js is not installed or not found in your system PATH.
+
+Solution: Install Node.js (v18.0.0 or higher) on the computer where Cursor is running:
+
+Download and install Node.js from https://nodejs.org
+Restart Cursor completely after installation
+Verify installation by running node --version in a terminal
+Important: Node.js must be installed on your computer (where Cursor runs), not on the Home Assistant server.
+
+
 ### Add-on won't start
 
 **Check logs:** Supervisor → HA Vibecode Agent → Logs

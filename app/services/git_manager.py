@@ -21,6 +21,7 @@ class GitManager:
         self.max_backups = int(os.getenv('MAX_BACKUPS', '50'))
         self.repo = None
         self.processing_request = False  # Flag to disable auto-commits during request processing
+        self.last_known_commit_count = None  # Track last known commit count after cleanup
         
         if self.enabled:
             self._init_repo()
@@ -250,11 +251,18 @@ secrets.yaml
             try:
                 # Get current branch name
                 current_branch = self.repo.active_branch.name
-                # Use git log to count only commits in current branch
-                # This is more reliable than rev-list which may count dangling objects
-                log_output = self.repo.git.log('--oneline', current_branch)
-                commit_count = len([line for line in log_output.strip().split('\n') if line.strip()])
-                logger.info(f"Commit count via git log ({current_branch}): {commit_count}")
+                
+                # If we have a last known count after cleanup, use it as baseline
+                if self.last_known_commit_count is not None:
+                    # Increment from last known count
+                    commit_count = self.last_known_commit_count + 1
+                    logger.info(f"Commit count: {commit_count} (incremented from last known: {self.last_known_commit_count})")
+                else:
+                    # Use git log to count only commits in current branch
+                    # This is more reliable than rev-list which may count dangling objects
+                    log_output = self.repo.git.log('--oneline', current_branch, '--max-count=100')
+                    commit_count = len([line for line in log_output.strip().split('\n') if line.strip()])
+                    logger.info(f"Commit count via git log ({current_branch}): {commit_count}")
             except Exception as e:
                 # Fallback: count commits using iter_commits with HEAD
                 logger.warning(f"git log failed, using iter_commits fallback: {e}")
@@ -632,6 +640,10 @@ secrets.yaml
                 logger.warning(f"Commit count mismatch: expected {commits_after}, git log shows {commits_after_verify}. Using expected count.")
             
             logger.info(f"✅ Automatic cleanup complete: {total_commits} → {commits_after} commits. Removed {total_commits - commits_after} old commits.")
+            
+            # Update last known commit count after cleanup
+            # This ensures next commit will correctly count from this baseline
+            self.last_known_commit_count = commits_after
             
         except Exception as cleanup_error:
             logger.error(f"Failed to cleanup commits using orphan branch: {cleanup_error}")

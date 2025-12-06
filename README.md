@@ -6,7 +6,7 @@
 
 **Let AI build your Home Assistant automations - just describe what you want in natural language** 🏠🤖
 
-Transform your smart home management! This add-on enables Cursor AI, Visual Studio Code or your favourite IDE with MCP support to:
+Transform your smart home management! This add-on enables **Cursor AI**, **Visual Studio Code (VS Code)** or **your favourite IDE with MCP** support to:
 - 📝 Analyze your Home Assistant configuration and devices
 - 🏗️ Create intelligent automations, scripts, and complete systems
 - 🔍 Monitor and troubleshoot your setup through log analysis

@@ -87,8 +87,9 @@ class HomeAssistantClient:
                 logger.info(f"ha_client: Removing return_response from data. Data keys before: {list(data.keys())}")
                 data = {k: v for k, v in data.items() if k != 'return_response'}
                 logger.info(f"ha_client: Data keys after: {list(data.keys())}")
-            params['return_response'] = True
-            logger.info(f"ha_client: Added return_response=True to params. Data: {data}, Params: {params}")
+            # Home Assistant API expects return_response as query parameter (string "true", not boolean)
+            params['return_response'] = 'true'
+            logger.info(f"ha_client: Added return_response='true' to params. Data: {data}, Params: {params}")
         logger.info(f"ha_client.call_service: endpoint={endpoint}, data={data}, params={params}")
         return await self._request('POST', endpoint, data, params=params)
     

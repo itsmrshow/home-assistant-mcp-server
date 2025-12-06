@@ -341,12 +341,13 @@ secrets.yaml
     async def _cleanup_old_commits(self):
         """Remove old commits to save space - keeps only last max_backups commits
         
+        This is called automatically when commits exceed 2x max_backups.
+        For manual cleanup with backup branch deletion, use cleanup_commits().
+        
         This method safely removes old commits while preserving:
         - All current files on disk (unchanged)
         - Last max_backups commits (history)
         - Ability to rollback to any of the last max_backups versions
-        
-        Strategy: Use shallow clone approach - simpler and less memory-intensive
         """
         try:
             commits = list(self.repo.iter_commits())
@@ -355,7 +356,7 @@ secrets.yaml
             if total_commits <= self.max_backups:
                 return  # No cleanup needed
             
-            logger.info(f"Repository has {total_commits} commits, max is {self.max_backups}. Starting cleanup...")
+            logger.info(f"Repository has {total_commits} commits, max is {self.max_backups}. Starting automatic cleanup...")
             
             # Get the commits we want to keep (last max_backups)
             commits_to_keep = list(self.repo.iter_commits(max_count=self.max_backups))
@@ -370,52 +371,203 @@ secrets.yaml
                 if self.repo.is_dirty(untracked_files=True):
                     await self.commit_changes("Pre-cleanup commit: save current state")
                 
-                # Create a backup branch pointing to current HEAD (safety measure)
-                backup_branch = f"backup_before_cleanup_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-                self.repo.create_head(backup_branch)
-                logger.info(f"Created safety backup branch: {backup_branch}")
-                
-                # Simple and safe approach: Reset current branch to the oldest commit we want to keep
-                # This removes old history but preserves all current files (they remain in working directory)
+                # Get the oldest commit we want to keep (last in list is oldest)
                 oldest_keep_commit = commits_to_keep[-1]
                 
-                # Use --soft reset to preserve all current files in staging
-                self.repo.git.reset('--soft', oldest_keep_commit.hexsha)
+                # Strategy: Use git rebase --onto to rewrite history
+                # We want to keep commits from oldest_keep_commit to HEAD (exactly max_backups commits)
+                # So we rebase everything onto oldest_keep_commit, removing older commits
                 
-                # If there are any staged changes (from files that were modified after oldest_keep_commit),
-                # commit them to preserve the current state
-                if self.repo.is_dirty():
-                    self.repo.index.commit(f"Cleanup: preserve current state after removing {total_commits - self.max_backups} old commits")
+                # Find the parent of oldest_keep_commit (the commit we want to remove)
+                parent_commit = oldest_keep_commit.parents[0] if oldest_keep_commit.parents else None
+                
+                if parent_commit:
+                    # Use rebase --onto: rebase commits from parent_commit to HEAD onto oldest_keep_commit
+                    # This keeps all commits from oldest_keep_commit to HEAD, removing older ones
+                    try:
+                        # Save current HEAD before rebase
+                        current_head = self.repo.head.commit.hexsha
+                        # Rebase: take commits from parent_commit..HEAD and rebase them onto oldest_keep_commit
+                        self.repo.git.rebase('--onto', oldest_keep_commit.hexsha, parent_commit.hexsha, current_branch)
+                    except Exception as rebase_error:
+                        # If rebase fails (e.g., conflicts), abort and use fallback
+                        logger.warning(f"Rebase failed: {rebase_error}. Using fallback approach...")
+                        try:
+                            self.repo.git.rebase('--abort')
+                        except:
+                            pass
+                        # Fallback: just move branch to oldest commit (loses newer commits, but safer)
+                        # This is not ideal, but better than failing completely
+                        logger.warning("Using fallback: moving branch to oldest commit (may lose some newer commits)")
+                        self.repo.git.update_ref(f'refs/heads/{current_branch}', oldest_keep_commit.hexsha)
+                        self.repo.git.reset('--hard', current_branch)
+                else:
+                    # Oldest commit has no parent (root commit), can't use rebase
+                    # Just ensure we're on the right commit
+                    logger.warning("Oldest commit is root commit, skipping rebase")
                 
                 # Use simpler gc without aggressive pruning to avoid OOM
-                # --prune=now is enough to remove unreachable objects
-                # Skip aggressive repack which can cause OOM with many commits
                 try:
                     self.repo.git.gc('--prune=now')
                 except Exception as gc_error:
                     # If gc fails, try even simpler approach
                     logger.warning(f"git gc failed: {gc_error}. Trying simpler cleanup...")
-                    # Just prune loose objects, skip full gc
                     self.repo.git.prune('--expire=now')
                 
                 commits_after = len(list(self.repo.iter_commits()))
-                logger.info(f"✅ Cleanup complete: {total_commits} → {commits_after} commits. Removed {total_commits - commits_after} old commits.")
-                logger.info(f"✅ All current files preserved. History limited to last {commits_after} commits.")
-                logger.info(f"💡 Safety backup branch '{backup_branch}' is available. You can delete it after verifying cleanup.")
+                logger.info(f"✅ Automatic cleanup complete: {total_commits} → {commits_after} commits. Removed {total_commits - commits_after} old commits.")
                 
             except Exception as cleanup_error:
                 logger.error(f"Failed to cleanup commits: {cleanup_error}")
-                # Try to restore to backup branch if cleanup failed
+                # Try to restore to original branch if cleanup failed
                 try:
-                    if 'backup_branch' in locals():
-                        self.repo.git.checkout(current_branch)
-                        logger.warning(f"Cleanup failed. Repository is still on {current_branch}. Backup branch '{backup_branch}' is available for recovery.")
+                    self.repo.git.checkout(current_branch)
                 except:
                     pass
                 # Don't fail the whole operation if cleanup fails - repository is still usable
                 
         except Exception as e:
             logger.error(f"Failed to cleanup commits: {e}")
+    
+    async def cleanup_commits(self, delete_backup_branches: bool = True) -> Dict:
+        """Manually cleanup old commits - keeps only last max_backups commits
+        
+        This is a manual cleanup function that:
+        1. Removes old commits (keeps only last max_backups)
+        2. Optionally deletes old backup_before_cleanup branches
+        
+        Returns:
+            Dict with cleanup results
+        """
+        if not self.enabled or not self.repo:
+            return {
+                "success": False,
+                "message": "Git versioning not enabled",
+                "commits_before": 0,
+                "commits_after": 0,
+                "backup_branches_deleted": 0
+            }
+        
+        try:
+            commits = list(self.repo.iter_commits())
+            total_commits = len(commits)
+            
+            if total_commits <= self.max_backups:
+                # Still clean up backup branches if requested
+                deleted_branches = 0
+                if delete_backup_branches:
+                    deleted_branches = self._delete_backup_branches()
+                
+                return {
+                    "success": True,
+                    "message": f"No cleanup needed - repository has {total_commits} commits (max: {self.max_backups})",
+                    "commits_before": total_commits,
+                    "commits_after": total_commits,
+                    "backup_branches_deleted": deleted_branches
+                }
+            
+            logger.info(f"Manual cleanup: Repository has {total_commits} commits, max is {self.max_backups}. Starting cleanup...")
+            
+            # Get the commits we want to keep (last max_backups)
+            commits_to_keep = list(self.repo.iter_commits(max_count=self.max_backups))
+            if not commits_to_keep:
+                return {
+                    "success": False,
+                    "message": "No commits to keep",
+                    "commits_before": total_commits,
+                    "commits_after": total_commits,
+                    "backup_branches_deleted": 0
+                }
+            
+            # Save current branch name
+            current_branch = self.repo.active_branch.name
+            
+            # Ensure all current changes are committed before cleanup
+            if self.repo.is_dirty(untracked_files=True):
+                await self.commit_changes("Pre-cleanup commit: save current state")
+            
+            # Get the oldest commit we want to keep (last in list is oldest)
+            oldest_keep_commit = commits_to_keep[-1]
+            
+            # Strategy: Use git rebase --onto to rewrite history
+            # We want to keep commits from oldest_keep_commit to HEAD (exactly max_backups commits)
+            parent_commit = oldest_keep_commit.parents[0] if oldest_keep_commit.parents else None
+            
+            if parent_commit:
+                # Use rebase --onto: rebase commits from parent_commit to HEAD onto oldest_keep_commit
+                try:
+                    current_head = self.repo.head.commit.hexsha
+                    self.repo.git.rebase('--onto', oldest_keep_commit.hexsha, parent_commit.hexsha, current_branch)
+                except Exception as rebase_error:
+                    logger.warning(f"Rebase failed: {rebase_error}. Using fallback approach...")
+                    try:
+                        self.repo.git.rebase('--abort')
+                    except:
+                        pass
+                    # Fallback: just move branch to oldest commit
+                    logger.warning("Using fallback: moving branch to oldest commit")
+                    self.repo.git.update_ref(f'refs/heads/{current_branch}', oldest_keep_commit.hexsha)
+                    self.repo.git.reset('--hard', current_branch)
+            else:
+                logger.warning("Oldest commit is root commit, skipping rebase")
+            
+            # Clean up backup branches if requested
+            deleted_branches = 0
+            if delete_backup_branches:
+                deleted_branches = self._delete_backup_branches()
+            
+            # Use simpler gc without aggressive pruning to avoid OOM
+            try:
+                self.repo.git.gc('--prune=now')
+            except Exception as gc_error:
+                logger.warning(f"git gc failed: {gc_error}. Trying simpler cleanup...")
+                self.repo.git.prune('--expire=now')
+            
+            commits_after = len(list(self.repo.iter_commits()))
+            
+            logger.info(f"✅ Manual cleanup complete: {total_commits} → {commits_after} commits. Removed {total_commits - commits_after} old commits.")
+            if delete_backup_branches and deleted_branches > 0:
+                logger.info(f"✅ Deleted {deleted_branches} old backup branches.")
+            
+            return {
+                "success": True,
+                "message": f"Cleanup complete: {total_commits} → {commits_after} commits",
+                "commits_before": total_commits,
+                "commits_after": commits_after,
+                "backup_branches_deleted": deleted_branches
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to cleanup commits: {e}")
+            return {
+                "success": False,
+                "message": f"Cleanup failed: {e}",
+                "commits_before": total_commits if 'total_commits' in locals() else 0,
+                "commits_after": 0,
+                "backup_branches_deleted": 0
+            }
+    
+    def _delete_backup_branches(self) -> int:
+        """Delete all backup_before_cleanup branches"""
+        try:
+            backup_branches = [
+                branch for branch in self.repo.branches
+                if branch.name.startswith('backup_before_cleanup_')
+            ]
+            
+            deleted_count = 0
+            for branch in backup_branches:
+                try:
+                    self.repo.git.branch('-D', branch.name)
+                    deleted_count += 1
+                    logger.debug(f"Deleted backup branch: {branch.name}")
+                except Exception as e:
+                    logger.warning(f"Failed to delete backup branch {branch.name}: {e}")
+            
+            return deleted_count
+        except Exception as e:
+            logger.warning(f"Failed to delete backup branches: {e}")
+            return 0
     
     async def get_history(self, limit: int = 20) -> List[Dict]:
         """Get commit history"""

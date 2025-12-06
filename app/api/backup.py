@@ -192,3 +192,39 @@ async def end_checkpoint():
         logger.error(f"Failed to end checkpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/cleanup")
+async def cleanup_commits(delete_backup_branches: bool = True):
+    """
+    Manually cleanup old commits - keeps only last max_backups commits
+    
+    This function:
+    1. Removes old commits (keeps only last max_backups commits, typically 50)
+    2. Optionally deletes old backup_before_cleanup branches
+    
+    **Example:**
+    - POST `/api/backup/cleanup?delete_backup_branches=true`
+    """
+    try:
+        if not git_manager.enabled:
+            raise HTTPException(status_code=400, detail="Git versioning is not enabled")
+        
+        result = await git_manager.cleanup_commits(delete_backup_branches=delete_backup_branches)
+        
+        if not result["success"]:
+            raise HTTPException(status_code=500, detail=result["message"])
+        
+        logger.info(f"Manual cleanup completed: {result['commits_before']} → {result['commits_after']} commits")
+        
+        return {
+            "success": True,
+            "message": result["message"],
+            "commits_before": result["commits_before"],
+            "commits_after": result["commits_after"],
+            "backup_branches_deleted": result["backup_branches_deleted"]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to cleanup commits: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+

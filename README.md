@@ -53,6 +53,33 @@ https://github.com/user-attachments/assets/0df48019-06c0-48dd-82ad-c7fe0734ddb3
 
 **Result:** Describe your goal → AI analyzes your setup → Creates custom solution → Deploys automatically! 🚀
 
+
+**How is this different from other MCP modules for Home Assistant?**
+
+Most MCP integrations I’ve seen for Cursor, VS Code or Claude work only on your local machine and talk to Home Assistant over SSH and sometimes the REST API.
+
+For serious Home Assistant work, that’s not really enough:
+
+Home Assistant is not just a bunch of YAML files.
+It exposes multiple internal APIs, and some of the most important ones are only available from inside HA itself over the WebSocket API.
+
+When you access HA only via SSH, the AI usually has to generate and upload a helper script on every request, then execute it blindly on the host.
+Since that script can be different every time, each request is a bit of a black box — more like playing Russian roulette than doing reliable automation.
+
+Because of that, I chose a different architecture.
+
+This project is **split into two modules**:
+
+**Home Assistant Agent** (this module) – runs inside Home Assistant (as an add-on),
+has native access to all relevant APIs, files and services,
+and exposes a safe, well-defined interface for external tools.
+
+**Home Assistant MCP server** – runs on your computer alongside your AI IDE (Cursor, VS Code, etc.)
+and talks to the Agent over a controlled API instead of SSH hacks (installation steps below)
+
+This design makes working with Home Assistant faster, more predictable, safer and repeatable.
+Your AI IDE gets exactly the actions and data it needs — through a stable API — instead of constantly inventing ad-hoc scripts and hoping they behave correctly.
+
 ---
 
 ## 🌟 Features

@@ -128,7 +128,8 @@ secrets.yaml
             
             # Remove already tracked files that should be ignored
             # This is important for existing repos where large files were already committed
-            if was_new and self.repo is not None:
+            # Always try to clean up, not just when .gitignore is new
+            if self.repo is not None:
                 self._remove_tracked_ignored_files()
         except Exception as e:
             logger.warning(f"Failed to create/update .gitignore: {e}")
@@ -167,7 +168,16 @@ secrets.yaml
                 for pattern in patterns_to_ignore:
                     # Remove leading slash for matching
                     normalized_pattern = pattern.lstrip('/')
-                    if fnmatch.fnmatch(file_path, normalized_pattern) or file_path.startswith(normalized_pattern.rstrip('*')):
+                    # Check if file matches pattern
+                    if fnmatch.fnmatch(file_path, normalized_pattern):
+                        files_to_remove.append(file_path)
+                        break
+                    # Check if file is in a directory that matches pattern (e.g., .storage/* matches .storage/file)
+                    elif normalized_pattern.endswith('/*') and file_path.startswith(normalized_pattern.rstrip('/*') + '/'):
+                        files_to_remove.append(file_path)
+                        break
+                    # Check for wildcard patterns like home-assistant_v2.db*
+                    elif '*' in normalized_pattern and fnmatch.fnmatch(file_path, normalized_pattern):
                         files_to_remove.append(file_path)
                         break
             

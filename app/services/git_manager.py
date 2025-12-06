@@ -361,6 +361,12 @@ secrets.yaml
             if not commits_to_keep:
                 return
             
+            # Verify we got the right number of commits
+            if len(commits_to_keep) != commits_to_keep_count:
+                logger.warning(f"Expected {commits_to_keep_count} commits to keep, but got {len(commits_to_keep)}. Using what we have.")
+            
+            logger.debug(f"Keeping {len(commits_to_keep)} commits: from {commits_to_keep[-1].hexsha[:8]} (oldest) to {commits_to_keep[0].hexsha[:8]} (newest)")
+            
             try:
                 # Save current branch name
                 current_branch = self.repo.active_branch.name
@@ -389,7 +395,9 @@ secrets.yaml
                 # Now cherry-pick all commits from oldest+1 to newest (in order)
                 # commits_to_keep is ordered newest to oldest, so we reverse it
                 commits_to_cherry_pick = list(reversed(commits_to_keep[:-1]))  # All except oldest
+                logger.debug(f"Cherry-picking {len(commits_to_cherry_pick)} commits (excluding oldest)")
                 
+                cherry_picked_count = 0
                 for commit in commits_to_cherry_pick:
                     try:
                         # Cherry-pick with --no-commit to avoid creating merge commits
@@ -397,6 +405,7 @@ secrets.yaml
                         # Commit with original message
                         if self.repo.is_dirty():
                             self.repo.index.commit(commit.message.strip())
+                            cherry_picked_count += 1
                     except Exception as cp_error:
                         # If cherry-pick fails, abort and skip this commit
                         logger.warning(f"Cherry-pick failed for {commit.hexsha[:8]}: {cp_error}")
@@ -405,6 +414,8 @@ secrets.yaml
                         except:
                             pass
                         # Continue with next commit
+                
+                logger.debug(f"Cherry-picked {cherry_picked_count} commits. Total should be: 1 (oldest) + {cherry_picked_count} (cherry-picked) = {1 + cherry_picked_count}")
                 
                 # Replace the original branch with the cleaned branch
                 self.repo.git.branch('-D', current_branch)

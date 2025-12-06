@@ -54,7 +54,7 @@ class HomeAssistantClient:
                 ) as response:
                     if response.status >= 400:
                         text = await response.text()
-                        logger.error(f"HA API error: {response.status} - {text} | Token used: {token_preview}")
+                        logger.error(f"HA API error: {response.status} - {text} | Token used: {token_preview} | URL: {url} | Data: {data} | Params: {params}")
                         raise Exception(f"HA API error: {response.status} - {text}")
                     
                     logger.debug(f"HA API success: {method} {url} -> {response.status}")

@@ -250,12 +250,13 @@ secrets.yaml
             try:
                 # Get current branch name
                 current_branch = self.repo.active_branch.name
+                
                 # Use git rev-list to count only commits reachable from HEAD
-                # This is more reliable - it counts only commits in the current branch history
                 # Use --first-parent to follow only the main branch (not merge commits)
-                rev_list_output = self.repo.git.rev_list('--count', '--first-parent', 'HEAD')
+                # Use --no-reflog to exclude commits only reachable via reflog
+                rev_list_output = self.repo.git.rev_list('--count', '--first-parent', '--no-reflog', 'HEAD')
                 commit_count = int(rev_list_output.strip())
-                logger.info(f"Commit count via rev-list --first-parent HEAD ({current_branch}): {commit_count}")
+                logger.info(f"Commit count via rev-list --first-parent --no-reflog HEAD ({current_branch}): {commit_count}")
             except Exception as e:
                 # Fallback: use git log with explicit HEAD reference
                 logger.warning(f"git rev-list failed, using git log fallback: {e}")
@@ -389,11 +390,11 @@ secrets.yaml
                 # Get current branch name
                 current_branch = self.repo.active_branch.name
                 # Use git rev-list to count only commits reachable from HEAD
-                # This is more reliable - it counts only commits in the current branch history
                 # Use --first-parent to follow only the main branch (not merge commits)
-                rev_list_output = self.repo.git.rev_list('--count', '--first-parent', 'HEAD')
+                # Use --no-reflog to exclude commits only reachable via reflog
+                rev_list_output = self.repo.git.rev_list('--count', '--first-parent', '--no-reflog', 'HEAD')
                 total_commits = int(rev_list_output.strip())
-                logger.info(f"Total commits via rev-list --first-parent HEAD ({current_branch}): {total_commits}")
+                logger.info(f"Total commits via rev-list --first-parent --no-reflog HEAD ({current_branch}): {total_commits}")
             except Exception as e:
                 # Fallback: use git log with explicit HEAD reference
                 logger.warning(f"git rev-list failed, using git log fallback: {e}")

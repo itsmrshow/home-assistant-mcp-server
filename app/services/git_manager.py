@@ -245,12 +245,14 @@ secrets.yaml
             # When we reach max_backups (50), we keep only 30 commits and continue
             # Count commits in current branch only (not all commits in repo)
             try:
-                # Use git rev-list to count only commits reachable from HEAD
+                # Get current branch name
+                current_branch = self.repo.active_branch.name
+                # Use git rev-list to count only commits in current branch
+                # Using branch name instead of HEAD ensures we count only branch commits
                 # This excludes dangling objects that may still exist after cleanup
-                # Use --no-merges to avoid counting merge commits separately
-                rev_list_output = self.repo.git.rev_list('--count', '--no-merges', 'HEAD')
+                rev_list_output = self.repo.git.rev_list('--count', '--no-merges', current_branch)
                 commit_count = int(rev_list_output.strip())
-                logger.info(f"Commit count via rev-list: {commit_count}")
+                logger.info(f"Commit count via rev-list ({current_branch}): {commit_count}")
             except Exception as e:
                 # Fallback: count commits using iter_commits with HEAD
                 logger.warning(f"git rev-list failed, using iter_commits fallback: {e}")
@@ -344,6 +346,19 @@ secrets.yaml
         self.processing_request = False
         logger.debug("Request processing ended - auto-commits re-enabled")
     
+    def _check_git_filter_repo_available(self) -> bool:
+        """Check if git filter-repo is available in the system"""
+        try:
+            # Try to run git filter-repo --version
+            import subprocess
+            result = subprocess.run(['git', 'filter-repo', '--version'], 
+                                  capture_output=True, 
+                                  timeout=5,
+                                  cwd=self.repo.working_dir)
+            return result.returncode == 0
+        except (FileNotFoundError, subprocess.TimeoutExpired, Exception):
+            return False
+    
     async def _cleanup_old_commits(self):
         """Remove old commits to save space - keeps only 30 commits when reaching 50
         
@@ -355,16 +370,20 @@ secrets.yaml
         - All current files on disk (unchanged)
         - Last 30 commits (history)
         - Ability to rollback to any of the last 30 versions
+        
+        Uses git filter-repo if available (recommended), otherwise falls back to orphan branch method.
         """
         try:
             # Count commits in current branch only (not all commits in repo)
             try:
-                # Use git rev-list to count only commits reachable from HEAD
+                # Get current branch name
+                current_branch = self.repo.active_branch.name
+                # Use git rev-list to count only commits in current branch
+                # Using branch name instead of HEAD ensures we count only branch commits
                 # This excludes dangling objects that may still exist after cleanup
-                # Use --no-merges to avoid counting merge commits separately
-                rev_list_output = self.repo.git.rev_list('--count', '--no-merges', 'HEAD')
+                rev_list_output = self.repo.git.rev_list('--count', '--no-merges', current_branch)
                 total_commits = int(rev_list_output.strip())
-                logger.info(f"Total commits via rev-list: {total_commits}")
+                logger.info(f"Total commits via rev-list ({current_branch}): {total_commits}")
             except Exception as e:
                 # Fallback: count commits using iter_commits with HEAD
                 logger.warning(f"git rev-list failed, using iter_commits fallback: {e}")
@@ -377,6 +396,42 @@ secrets.yaml
                 return  # No cleanup needed yet
             
             logger.info(f"Repository has {total_commits} commits, reached max ({self.max_backups}). Starting automatic cleanup to keep {commits_to_keep_count} commits...")
+            
+            # Try to use git filter-repo if available (recommended method)
+            if self._check_git_filter_repo_available():
+                logger.info("Using git filter-repo for cleanup (recommended method)")
+                try:
+                    # Ensure all current changes are committed before cleanup
+                    if self.repo.is_dirty(untracked_files=True):
+                        await self.commit_changes("Pre-cleanup commit: save current state")
+                    
+                    # Use git filter-repo to keep only last N commits
+                    # This is the cleanest and most reliable method
+                    import subprocess
+                    result = subprocess.run(
+                        ['git', 'filter-repo', '--max-commit-count', str(commits_to_keep_count)],
+                        cwd=self.repo.working_dir,
+                        capture_output=True,
+                        text=True,
+                        timeout=300  # 5 minutes timeout
+                    )
+                    
+                    if result.returncode != 0:
+                        raise Exception(f"git filter-repo failed with exit code {result.returncode}: {result.stderr}")
+                    
+                    # Reload the repository after filter-repo (it modifies the repo)
+                    # We need to reinitialize or refresh the repo object
+                    # For now, just verify the result
+                    rev_list_output = self.repo.git.rev_list('--count', '--no-merges', current_branch)
+                    commits_after = int(rev_list_output.strip())
+                    logger.info(f"✅ Cleanup complete using git filter-repo: {total_commits} → {commits_after} commits. Removed {total_commits - commits_after} old commits.")
+                    return
+                except Exception as filter_repo_error:
+                    logger.warning(f"git filter-repo failed: {filter_repo_error}. Falling back to orphan branch method.")
+                    # Continue with fallback method below
+            
+            # Fallback: Use orphan branch + cherry-pick method
+            logger.info("Using orphan branch method for cleanup (fallback)")
             
             # Get the commits we want to keep (last 30)
             commits_to_keep = list(self.repo.iter_commits(max_count=commits_to_keep_count))

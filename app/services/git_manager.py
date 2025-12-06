@@ -501,6 +501,10 @@ secrets.yaml
                 logger.warning(f"format-patch method failed: {format_patch_error}. Falling back to orphan branch method.")
                 # Fallback to orphan branch method
                 await self._cleanup_using_orphan_branch(total_commits, commits_to_keep_count, current_branch)
+            
+        except Exception as cleanup_error:
+            logger.error(f"Failed to cleanup commits: {cleanup_error}")
+            # Don't fail the whole operation if cleanup fails - repository is still usable
     
     async def _cleanup_using_orphan_branch(self, total_commits: int, commits_to_keep_count: int, current_branch: str):
         """Fallback cleanup method using orphan branch + cherry-pick"""

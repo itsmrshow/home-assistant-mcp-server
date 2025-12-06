@@ -42,16 +42,6 @@ class HomeAssistantClient:
         token_preview = f"{self.token[:20]}..." if self.token else "EMPTY"
         logger.debug(f"HA API Request: {method} {url}, Token: {token_preview}")
         
-        # For POST requests with query params, aiohttp might not handle them correctly
-        # Manually append query params to URL if needed
-        if params and method == 'POST':
-            from urllib.parse import urlencode
-            query_string = urlencode(params)
-            if query_string:
-                url = f"{url}?{query_string}"
-                logger.debug(f"Added query params to URL: {url}")
-                params = None  # Clear params to avoid double encoding
-        
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.request(
@@ -64,7 +54,7 @@ class HomeAssistantClient:
                 ) as response:
                     if response.status >= 400:
                         text = await response.text()
-                        logger.error(f"HA API error: {response.status} - {text} | Token used: {token_preview} | URL: {url} | Data: {data} | Params: {params}")
+                        logger.error(f"HA API error: {response.status} - {text} | Token used: {token_preview}")
                         raise Exception(f"HA API error: {response.status} - {text}")
                     
                     logger.debug(f"HA API success: {method} {url} -> {response.status}")
@@ -87,21 +77,18 @@ class HomeAssistantClient:
     
     async def call_service(self, domain: str, service: str, data: Dict) -> Dict:
         """Call a Home Assistant service"""
+        endpoint = f"services/{domain}/{service}"
+        
         # Some services require return_response as query parameter (e.g., file.read_file)
         # Remove return_response from data if present (it should be a query param, not in body)
-        params = {}
+        params = None
         if domain == 'file' and service == 'read_file':
             # Remove return_response from data dict if it's there (should be query param)
             if 'return_response' in data:
-                logger.info(f"ha_client: Removing return_response from data. Data keys before: {list(data.keys())}")
                 data = {k: v for k, v in data.items() if k != 'return_response'}
-                logger.info(f"ha_client: Data keys after: {list(data.keys())}")
             # Home Assistant API requires return_response as query parameter for file.read_file
-            params['return_response'] = 'true'
-            logger.info(f"ha_client: Added return_response='true' to params for file.read_file. Data: {data}, Params: {params}")
+            params = {'return_response': True}
         
-        endpoint = f"services/{domain}/{service}"
-        logger.info(f"ha_client.call_service: endpoint={endpoint}, data={data}, params={params}")
         return await self._request('POST', endpoint, data, params=params)
     
     async def get_config(self) -> Dict:

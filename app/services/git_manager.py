@@ -469,16 +469,30 @@ secrets.yaml
                     subprocess.run(['git', 'init'], cwd=new_repo_path, check=True, capture_output=True)
                     
                     # Apply patches to new repository
+                    # Use --allow-empty to allow commits that only modify ignored files
+                    # Use --ignore-whitespace to be more lenient with patches
                     logger.info(f"Applying patches to new repository...")
                     result = subprocess.run(
-                        ['git', 'am', patch_file],
+                        ['git', 'am', '--allow-empty', '--ignore-whitespace', patch_file],
                         cwd=new_repo_path,
                         capture_output=True,
                         text=True
                     )
                     
                     if result.returncode != 0:
-                        raise Exception(f"git am failed: {result.stderr}")
+                        # If git am fails, try to continue or skip problematic patches
+                        logger.warning(f"git am failed, trying to continue: {result.stderr}")
+                        # Try to abort and use a different approach
+                        subprocess.run(['git', 'am', '--abort'], cwd=new_repo_path, capture_output=True)
+                        # Use --3way to allow 3-way merge for conflicts
+                        result = subprocess.run(
+                            ['git', 'am', '--3way', '--allow-empty', patch_file],
+                            cwd=new_repo_path,
+                            capture_output=True,
+                            text=True
+                        )
+                        if result.returncode != 0:
+                            raise Exception(f"git am failed even with --3way: {result.stderr}")
                     
                     # Copy .git directory from new repo to original (backup original first)
                     original_git_backup = os.path.join(tmpdir, 'original_git_backup')

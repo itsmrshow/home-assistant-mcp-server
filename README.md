@@ -6,6 +6,7 @@
 
 **Let AI build your Home Assistant automations – just describe what you want in natural language** 🏠🤖
 
+You describe your goal → AI inspects your Home Assistant → designs a custom solution → and deploys it on-board automatically. 🚀
 Transform the way you manage your smart home. This add-on enables **Cursor**, **Visual Studio Code (VS Code)**, or any **MCP-enabled IDE** to:
 
 - 📝 Analyze your Home Assistant configuration, entities, and devices  
@@ -29,34 +30,57 @@ https://github.com/user-attachments/assets/0df48019-06c0-48dd-82ad-c7fe0734ddb3
 
 ## 🎯 What is this?
 
-**HA Vibecode Agent** is a Home Assistant Add-on that provides a **REST API** enabling AI assistants (like Cursor AI, VS Code or other IDEs via [MCP protocol](https://github.com/Coolver/home-assistant-mcp)) to:
+**HA Vibecode Agent** is a Home Assistant add-on that exposes a safe on-board REST API and toolset, allowing AI assistants (Cursor, VS Code, Claude, Continue, and any MCP-enabled IDE) to work *with* your Home Assistant instead of just generating YAML in the dark.
 
-### 🔍 Analyze Your Setup
-✅ **Read entire configuration** - entities, automations, scripts, helpers  
-✅ **Understand your devices** - detects capabilities and relationships  
-✅ **Learn existing patterns** - analyzes what you already have  
+---
 
-### 🏗️ Build Intelligence
-✅ **Create complete systems** - 10+ interconnected automations in seconds  
-✅ **Generate helpers and sensors** - tailored to your needs  
-✅ **Write optimized scripts** - based on your actual devices  
-✅ **Deploy dashboards** - with all your entities  
+### 🔍 Analyze your setup
 
-### 📦 Extend with Community
-✅ **Install HACS** - get access to 1000+ custom integrations  
-✅ **Search repositories** - find themes, plugins, and integrations  
-✅ **Install integrations** - one-command setup for community components  
-✅ **Auto-updates** - keep all HACS repositories up to date  
+✅ Read your full configuration — entities, automations, scripts, helpers  
+✅ Understand your devices — capabilities, relations, and usage patterns  
+✅ Learn existing logic — analyze how your current automations and scripts behave  
 
-### 🔒 Safe Operations
-✅ **Git versioning** - automatic backups of every change with meaningful commit messages  
-✅ **Meaningful commits** - AI-generated descriptive messages explaining what and why changed  
-✅ **Configuration validation** - tests before applying  
-✅ **Rollback capability** - undo any change instantly  
-✅ **Activity monitoring** - full audit log of all operations  
+---
 
-**Result:** Describe your goal → AI analyzes your setup → Creates custom solution → Deploys automatically! 🚀
+### 🏗️ Build intelligence
 
+✅ Create complete systems — multiple interconnected automations in seconds  
+✅ Generate helpers and sensors — tailored to your actual setup and needs  
+✅ Write optimized scripts — based on real entities, areas, and devices  
+✅ Refactor existing logic — improve or merge automations instead of starting from scratch  
+
+---
+
+### 📊 Dashboards & UI
+
+✅ Create and update Lovelace dashboards — fully programmatically  
+✅ Add, remove, or rearrange cards — stat, graphs, history, custom cards, and more  
+✅ Control layouts and views — organize rooms, areas, and scenarios  
+✅ Design and tweak themes — colors, typography, and styles for a personalized UI  
+
+---
+
+### 📦 Extend with the community
+
+✅ Install and configure HACS — unlock 1000+ community integrations  
+✅ Search repositories — themes, plugins, custom components, dashboards  
+✅ Install integrations — one-command setup for new HACS components  
+✅ Keep things fresh — update all HACS repositories from a single place  
+
+---
+
+### 🔒 Safe operations
+
+✅ Git-based versioning — every change is tracked with meaningful commit messages  
+✅ Human-readable commits — AI explains *what* changed and *why*  
+✅ Configuration validation — test before apply to reduce breaking changes  
+✅ One-click rollback — revert to a previous state if something goes wrong  
+✅ Activity log — full audit trail of what the agent did and when  
+
+---
+
+**Result:**  
+You describe your goal → AI inspects your Home Assistant → designs a custom solution → and deploys it on-board automatically. 🚀
 
 
 ### 🚀 How is this different from other MCP modules for Home Assistant?

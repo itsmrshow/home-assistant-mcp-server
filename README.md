@@ -121,29 +121,12 @@ Your AI IDE gets exactly the actions and data it needs — through a stable API 
 - Check configuration validity
 - Real-time state monitoring
 
-### 🔌 Add-on Management
-**Complete add-on lifecycle management - install, configure, and control services!**
-- Install/uninstall add-ons (Zigbee2MQTT, Node-RED, ESPHome, etc)
-- Configure add-on options
-- Start/stop/restart add-ons
-- Monitor add-on logs
-- Update add-ons
-- Powered by Supervisor API
-
-### 📦 HACS Management
-**Complete HACS integration via WebSocket - browse 1000+ custom integrations!**
-- Install HACS automatically from GitHub
-- Search repositories by name, author, or category
-- Install integrations, themes, and plugins
-- Update all installed repositories
-- View repository details (stars, versions, authors)
-- Powered by persistent WebSocket connection
-
-### 🔧 Component Management
-- Create/Delete Input Helpers (boolean, text, number, datetime, select)
-- Create/Delete Automations
-- Create/Delete Scripts
-- Automatic reload after changes
+### 📊 Dashboards & Themes
+- Create and update Lovelace dashboards programmatically
+- Add, remove, and rearrange cards (stat, graphs, history, custom cards, etc.)
+- Manage views, layouts, and groups for rooms and areas
+- Create and tweak themes for fully customized UI appearance
+- Safely adjust dashboards and themes through AI-driven operations
 
 ### 📁 File Management
 - List, read, write, append, delete files
@@ -151,28 +134,52 @@ Your AI IDE gets exactly the actions and data it needs — through a stable API 
 - YAML parsing and validation
 - Safe path handling (restricted to `/config`)
 
+### 🔧 Component Management
+- Create/Delete Input Helpers (boolean, text, number, datetime, select)
+- Create/Delete Automations
+- Create/Delete Scripts
+- Automatic reload after changes
+
 ### 💾 Git Versioning
 - Automatic commit on every change with meaningful commit messages
 - AI-generated descriptive messages explaining what and why changed
 - Backup history (up to 30 commits, configurable)
 - Automatic cleanup of old commits to prevent repository bloat
-- **View change history** - ask AI to show recent commits with meaningful messages
-- **Easy rollback** - ask AI to rollback to any previous version by description or commit hash
+- **View change history** – ask AI to show recent commits with meaningful messages
+- **Easy rollback** – ask AI to rollback to any previous version by description or commit hash
 - View diffs between versions
 - Commit messages include operation context (e.g., "Add automation: Control lights when motion detected")
 
 **Example AI interactions:**
-- *"Show me the last 10 changes to my configuration"* → AI displays commit history with meaningful messages
-- *"Something broke! Rollback to the version from yesterday"* → AI finds and restores previous version
-- *"What changed in the last commit?"* → AI shows detailed diff
-- *"Rollback to when I added the motion sensor automation"* → AI finds and restores that specific commit
+- *"Show me the last 10 changes to my configuration"* → AI displays commit history with meaningful messages  
+- *"Something broke! Roll back to the version from yesterday"* → AI finds and restores previous version  
+- *"What changed in the last commit?"* → AI shows detailed diff  
+- *"Roll back to when I added the motion sensor automation"* → AI finds and restores that specific commit
 
-### 📊 Monitoring & Troubleshooting
+### 📡 Monitoring & Troubleshooting
 - Agent logs API with filtering
 - Operation history
 - Real-time status
 - Health check endpoint
 - System monitoring and analysis
+
+### 🔌 Add-on Management
+**Complete add-on lifecycle management – install, configure, and control services!**
+- Install/uninstall add-ons (Zigbee2MQTT, Node-RED, ESPHome, etc.)
+- Configure add-on options
+- Start/stop/restart add-ons
+- Monitor add-on logs
+- Update add-ons
+- Powered by Supervisor API
+
+### 📦 HACS Management
+**Complete HACS integration via WebSocket – browse 1000+ custom integrations!**
+- Install HACS automatically from GitHub
+- Search repositories by name, author, or category
+- Install integrations, themes, and plugins
+- Update all installed repositories
+- View repository details (stars, versions, authors)
+- Powered by persistent WebSocket connection
 
 ---
 

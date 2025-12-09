@@ -1,0 +1,417 @@
+"""Registries API endpoints - Entity, Area, and Device Registry management"""
+from fastapi import APIRouter, HTTPException, Query, Body
+from typing import List, Optional, Dict, Any
+import logging
+
+from app.services.ha_websocket import get_ws_client
+from app.models.schemas import Response
+
+router = APIRouter()
+logger = logging.getLogger('ha_cursor_agent')
+
+# ==================== Entity Registry ====================
+
+@router.get("/entities/list")
+async def list_entity_registry():
+    """
+    Get all entities from Entity Registry
+    
+    Returns complete Entity Registry with metadata:
+    - entity_id, unique_id, name, area_id, device_id
+    - disabled, hidden_by, config_entry_id
+    - platform, original_name, etc.
+    
+    This provides area assignments and other metadata that /api/entities/list (states) doesn't include.
+    """
+    try:
+        ws_client = await get_ws_client()
+        entities = await ws_client.get_entity_registry_list()
+        
+        logger.info(f"Listed {len(entities)} entities from Entity Registry")
+        return {
+            "success": True,
+            "count": len(entities),
+            "entities": entities
+        }
+    except Exception as e:
+        logger.error(f"Failed to list Entity Registry: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to list Entity Registry: {str(e)}")
+
+@router.get("/entities/{entity_id}")
+async def get_entity_registry_entry(entity_id: str):
+    """
+    Get single entity from Entity Registry
+    
+    Returns entity metadata including area_id, device_id, name, disabled status, etc.
+    
+    Example:
+    - `/api/registries/entities/climate.bedroom_trv`
+    """
+    try:
+        ws_client = await get_ws_client()
+        entity = await ws_client.get_entity_registry_entry(entity_id)
+        
+        if not entity:
+            raise HTTPException(status_code=404, detail=f"Entity not found in registry: {entity_id}")
+        
+        return {
+            "success": True,
+            "entity_id": entity_id,
+            "entity": entity
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get Entity Registry entry: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get Entity Registry entry: {str(e)}")
+
+@router.post("/entities/update")
+async def update_entity_registry(
+    entity_id: str = Body(..., description="Entity ID to update"),
+    name: Optional[str] = Body(None, description="New friendly name"),
+    area_id: Optional[str] = Body(None, description="Area ID to assign entity to"),
+    disabled: Optional[bool] = Body(None, description="Disable/enable entity"),
+    new_entity_id: Optional[str] = Body(None, description="New entity_id (rename)"),
+    icon: Optional[str] = Body(None, description="Icon for entity"),
+    aliases: Optional[List[str]] = Body(None, description="Aliases for entity")
+):
+    """
+    Update entity in Entity Registry
+    
+    **⚠️ WARNING: This modifies Home Assistant Entity Registry!**
+    
+    Updates entity metadata such as name, area assignment, disabled status, etc.
+    
+    Example:
+    ```json
+    {
+      "entity_id": "climate.bedroom_trv",
+      "name": "Bedroom Thermostat",
+      "area_id": "bedroom_area_id",
+      "disabled": false
+    }
+    ```
+    """
+    try:
+        ws_client = await get_ws_client()
+        
+        # Build update dict with only provided fields
+        update_data = {}
+        if name is not None:
+            update_data['name'] = name
+        if area_id is not None:
+            update_data['area_id'] = area_id
+        if disabled is not None:
+            update_data['disabled'] = disabled
+        if new_entity_id is not None:
+            update_data['new_entity_id'] = new_entity_id
+        if icon is not None:
+            update_data['icon'] = icon
+        if aliases is not None:
+            update_data['aliases'] = aliases
+        
+        if not update_data:
+            raise HTTPException(status_code=400, detail="No fields provided for update")
+        
+        result = await ws_client.update_entity_registry(entity_id, **update_data)
+        
+        logger.info(f"Updated Entity Registry: {entity_id} with {update_data}")
+        return {
+            "success": True,
+            "entity_id": entity_id,
+            "updated_fields": update_data,
+            "result": result
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update Entity Registry: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update Entity Registry: {str(e)}")
+
+@router.post("/entities/remove")
+async def remove_entity_registry_entry(
+    entity_id: str = Body(..., description="Entity ID to remove from registry")
+):
+    """
+    Remove entity from Entity Registry
+    
+    **⚠️ WARNING: This removes entity from Entity Registry!**
+    
+    The entity will be removed from Home Assistant's Entity Registry.
+    Note: This doesn't delete the entity itself, just removes it from the registry.
+    """
+    try:
+        ws_client = await get_ws_client()
+        result = await ws_client.remove_entity_registry_entry(entity_id)
+        
+        logger.warning(f"Removed entity from Entity Registry: {entity_id}")
+        return {
+            "success": True,
+            "entity_id": entity_id,
+            "result": result
+        }
+    except Exception as e:
+        logger.error(f"Failed to remove Entity Registry entry: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to remove Entity Registry entry: {str(e)}")
+
+# ==================== Area Registry ====================
+
+@router.get("/areas/list")
+async def list_area_registry():
+    """
+    Get all areas from Area Registry
+    
+    Returns complete Area Registry with area_id, name, aliases, etc.
+    """
+    try:
+        ws_client = await get_ws_client()
+        areas = await ws_client.get_area_registry_list()
+        
+        logger.info(f"Listed {len(areas)} areas from Area Registry")
+        return {
+            "success": True,
+            "count": len(areas),
+            "areas": areas
+        }
+    except Exception as e:
+        logger.error(f"Failed to list Area Registry: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to list Area Registry: {str(e)}")
+
+@router.get("/areas/{area_id}")
+async def get_area_registry_entry(area_id: str):
+    """
+    Get single area from Area Registry
+    
+    Example:
+    - `/api/registries/areas/bedroom_area_id`
+    """
+    try:
+        ws_client = await get_ws_client()
+        area = await ws_client.get_area_registry_entry(area_id)
+        
+        if not area:
+            raise HTTPException(status_code=404, detail=f"Area not found in registry: {area_id}")
+        
+        return {
+            "success": True,
+            "area_id": area_id,
+            "area": area
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get Area Registry entry: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get Area Registry entry: {str(e)}")
+
+@router.post("/areas/create")
+async def create_area_registry_entry(
+    name: str = Body(..., description="Area name"),
+    aliases: Optional[List[str]] = Body(None, description="Optional aliases for area")
+):
+    """
+    Create new area in Area Registry
+    
+    **⚠️ WARNING: This creates a new area in Home Assistant!**
+    
+    Example:
+    ```json
+    {
+      "name": "Living Room",
+      "aliases": ["lounge", "main room"]
+    }
+    ```
+    """
+    try:
+        ws_client = await get_ws_client()
+        result = await ws_client.create_area_registry_entry(name, aliases)
+        
+        logger.info(f"Created area in Area Registry: {name}")
+        return {
+            "success": True,
+            "name": name,
+            "result": result
+        }
+    except Exception as e:
+        logger.error(f"Failed to create Area Registry entry: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to create Area Registry entry: {str(e)}")
+
+@router.post("/areas/update")
+async def update_area_registry_entry(
+    area_id: str = Body(..., description="Area ID to update"),
+    name: Optional[str] = Body(None, description="New area name"),
+    aliases: Optional[List[str]] = Body(None, description="New aliases list")
+):
+    """
+    Update area in Area Registry
+    
+    **⚠️ WARNING: This modifies Home Assistant Area Registry!**
+    
+    Example:
+    ```json
+    {
+      "area_id": "bedroom_area_id",
+      "name": "Master Bedroom",
+      "aliases": ["bedroom", "main bedroom"]
+    }
+    ```
+    """
+    try:
+        ws_client = await get_ws_client()
+        result = await ws_client.update_area_registry_entry(area_id, name, aliases)
+        
+        logger.info(f"Updated Area Registry: {area_id}")
+        return {
+            "success": True,
+            "area_id": area_id,
+            "result": result
+        }
+    except Exception as e:
+        logger.error(f"Failed to update Area Registry entry: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update Area Registry entry: {str(e)}")
+
+@router.post("/areas/delete")
+async def delete_area_registry_entry(
+    area_id: str = Body(..., description="Area ID to delete")
+):
+    """
+    Delete area from Area Registry
+    
+    **⚠️ WARNING: This deletes area from Home Assistant Area Registry!**
+    """
+    try:
+        ws_client = await get_ws_client()
+        result = await ws_client.delete_area_registry_entry(area_id)
+        
+        logger.warning(f"Deleted area from Area Registry: {area_id}")
+        return {
+            "success": True,
+            "area_id": area_id,
+            "result": result
+        }
+    except Exception as e:
+        logger.error(f"Failed to delete Area Registry entry: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete Area Registry entry: {str(e)}")
+
+# ==================== Device Registry ====================
+
+@router.get("/devices/list")
+async def list_device_registry():
+    """
+    Get all devices from Device Registry
+    
+    Returns complete Device Registry with device_id, name, area_id, manufacturer, model, etc.
+    """
+    try:
+        ws_client = await get_ws_client()
+        devices = await ws_client.get_device_registry_list()
+        
+        logger.info(f"Listed {len(devices)} devices from Device Registry")
+        return {
+            "success": True,
+            "count": len(devices),
+            "devices": devices
+        }
+    except Exception as e:
+        logger.error(f"Failed to list Device Registry: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to list Device Registry: {str(e)}")
+
+@router.get("/devices/{device_id}")
+async def get_device_registry_entry(device_id: str):
+    """
+    Get single device from Device Registry
+    
+    Example:
+    - `/api/registries/devices/device_id_123`
+    """
+    try:
+        ws_client = await get_ws_client()
+        device = await ws_client.get_device_registry_entry(device_id)
+        
+        if not device:
+            raise HTTPException(status_code=404, detail=f"Device not found in registry: {device_id}")
+        
+        return {
+            "success": True,
+            "device_id": device_id,
+            "device": device
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get Device Registry entry: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get Device Registry entry: {str(e)}")
+
+@router.post("/devices/update")
+async def update_device_registry_entry(
+    device_id: str = Body(..., description="Device ID to update"),
+    area_id: Optional[str] = Body(None, description="Area ID to assign device to"),
+    name_by_user: Optional[str] = Body(None, description="Custom name for device"),
+    disabled_by: Optional[str] = Body(None, description="Disable device (set to 'user' to disable)")
+):
+    """
+    Update device in Device Registry
+    
+    **⚠️ WARNING: This modifies Home Assistant Device Registry!**
+    
+    Example:
+    ```json
+    {
+      "device_id": "device_id_123",
+      "area_id": "bedroom_area_id",
+      "name_by_user": "Bedroom Thermostat"
+    }
+    ```
+    """
+    try:
+        ws_client = await get_ws_client()
+        
+        # Build update dict with only provided fields
+        update_data = {}
+        if area_id is not None:
+            update_data['area_id'] = area_id
+        if name_by_user is not None:
+            update_data['name_by_user'] = name_by_user
+        if disabled_by is not None:
+            update_data['disabled_by'] = disabled_by
+        
+        if not update_data:
+            raise HTTPException(status_code=400, detail="No fields provided for update")
+        
+        result = await ws_client.update_device_registry_entry(device_id, **update_data)
+        
+        logger.info(f"Updated Device Registry: {device_id} with {update_data}")
+        return {
+            "success": True,
+            "device_id": device_id,
+            "updated_fields": update_data,
+            "result": result
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to update Device Registry: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update Device Registry: {str(e)}")
+
+@router.post("/devices/remove")
+async def remove_device_registry_entry(
+    device_id: str = Body(..., description="Device ID to remove from registry")
+):
+    """
+    Remove device from Device Registry
+    
+    **⚠️ WARNING: This removes device from Device Registry!**
+    """
+    try:
+        ws_client = await get_ws_client()
+        result = await ws_client.remove_device_registry_entry(device_id)
+        
+        logger.warning(f"Removed device from Device Registry: {device_id}")
+        return {
+            "success": True,
+            "device_id": device_id,
+            "result": result
+        }
+    except Exception as e:
+        logger.error(f"Failed to remove Device Registry entry: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to remove Device Registry entry: {str(e)}")
+

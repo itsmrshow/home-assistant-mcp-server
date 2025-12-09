@@ -349,10 +349,10 @@ class HAWebSocketClient:
     async def wait_for_connection(self, timeout: float = 30.0):
         """
         Wait until WebSocket is connected
-        
+
         Args:
             timeout: Maximum time to wait
-            
+
         Raises:
             TimeoutError: If connection not established
         """
@@ -361,6 +361,237 @@ class HAWebSocketClient:
             if (datetime.now() - start).total_seconds() > timeout:
                 raise TimeoutError("WebSocket connection timeout")
             await asyncio.sleep(0.1)
+    
+    # ==================== Entity Registry ====================
+    
+    async def get_entity_registry_list(self) -> list:
+        """
+        Get all entities from Entity Registry
+        
+        Returns:
+            List of entity registry entries with metadata (area_id, device_id, name, etc.)
+        """
+        result = await self._send_message({'type': 'config/entity_registry/list'})
+        return result or []
+    
+    async def get_entity_registry_entry(self, entity_id: str) -> dict:
+        """
+        Get single entity from Entity Registry
+        
+        Args:
+            entity_id: Entity ID to get
+            
+        Returns:
+            Entity registry entry with metadata
+        """
+        result = await self._send_message({
+            'type': 'config/entity_registry/get',
+            'entity_id': entity_id
+        })
+        # Handle wrapped response format
+        if isinstance(result, dict) and 'result' in result:
+            return result['result']
+        return result or {}
+    
+    async def update_entity_registry(self, entity_id: str, **kwargs) -> dict:
+        """
+        Update entity in Entity Registry
+        
+        Args:
+            entity_id: Entity ID to update
+            **kwargs: Fields to update (name, area_id, disabled, new_entity_id, etc.)
+            
+        Returns:
+            Update result
+        """
+        message = {
+            'type': 'config/entity_registry/update',
+            'entity_id': entity_id,
+            **kwargs
+        }
+        result = await self._send_message(message)
+        logger.info(f"Updated entity registry: {entity_id}")
+        return result
+    
+    async def remove_entity_registry_entry(self, entity_id: str) -> dict:
+        """
+        Remove entity from Entity Registry
+        
+        Args:
+            entity_id: Entity ID to remove
+            
+        Returns:
+            Removal result
+        """
+        result = await self._send_message({
+            'type': 'config/entity_registry/remove',
+            'entity_id': entity_id
+        })
+        logger.info(f"Removed entity from registry: {entity_id}")
+        return result
+    
+    # ==================== Area Registry ====================
+    
+    async def get_area_registry_list(self) -> list:
+        """
+        Get all areas from Area Registry
+        
+        Returns:
+            List of area registry entries
+        """
+        result = await self._send_message({'type': 'config/area_registry/list'})
+        return result or []
+    
+    async def get_area_registry_entry(self, area_id: str) -> dict:
+        """
+        Get single area from Area Registry
+        
+        Args:
+            area_id: Area ID to get
+            
+        Returns:
+            Area registry entry
+        """
+        result = await self._send_message({
+            'type': 'config/area_registry/get',
+            'area_id': area_id
+        })
+        # Handle wrapped response format
+        if isinstance(result, dict) and 'result' in result:
+            return result['result']
+        return result or {}
+    
+    async def create_area_registry_entry(self, name: str, aliases: list = None) -> dict:
+        """
+        Create new area in Area Registry
+        
+        Args:
+            name: Area name
+            aliases: Optional list of aliases
+            
+        Returns:
+            Created area entry with area_id
+        """
+        message = {
+            'type': 'config/area_registry/create',
+            'name': name
+        }
+        if aliases:
+            message['aliases'] = aliases
+        
+        result = await self._send_message(message)
+        logger.info(f"Created area: {name}")
+        return result
+    
+    async def update_area_registry_entry(self, area_id: str, name: str = None, aliases: list = None) -> dict:
+        """
+        Update area in Area Registry
+        
+        Args:
+            area_id: Area ID to update
+            name: Optional new name
+            aliases: Optional new aliases list
+            
+        Returns:
+            Update result
+        """
+        message = {
+            'type': 'config/area_registry/update',
+            'area_id': area_id
+        }
+        if name is not None:
+            message['name'] = name
+        if aliases is not None:
+            message['aliases'] = aliases
+        
+        result = await self._send_message(message)
+        logger.info(f"Updated area registry: {area_id}")
+        return result
+    
+    async def delete_area_registry_entry(self, area_id: str) -> dict:
+        """
+        Delete area from Area Registry
+        
+        Args:
+            area_id: Area ID to delete
+            
+        Returns:
+            Deletion result
+        """
+        result = await self._send_message({
+            'type': 'config/area_registry/delete',
+            'area_id': area_id
+        })
+        logger.info(f"Deleted area from registry: {area_id}")
+        return result
+    
+    # ==================== Device Registry ====================
+    
+    async def get_device_registry_list(self) -> list:
+        """
+        Get all devices from Device Registry
+        
+        Returns:
+            List of device registry entries
+        """
+        result = await self._send_message({'type': 'config/device_registry/list'})
+        return result or []
+    
+    async def get_device_registry_entry(self, device_id: str) -> dict:
+        """
+        Get single device from Device Registry
+        
+        Args:
+            device_id: Device ID to get
+            
+        Returns:
+            Device registry entry
+        """
+        result = await self._send_message({
+            'type': 'config/device_registry/get',
+            'device_id': device_id
+        })
+        # Handle wrapped response format
+        if isinstance(result, dict) and 'result' in result:
+            return result['result']
+        return result or {}
+    
+    async def update_device_registry_entry(self, device_id: str, **kwargs) -> dict:
+        """
+        Update device in Device Registry
+        
+        Args:
+            device_id: Device ID to update
+            **kwargs: Fields to update (area_id, name_by_user, etc.)
+            
+        Returns:
+            Update result
+        """
+        message = {
+            'type': 'config/device_registry/update',
+            'device_id': device_id,
+            **kwargs
+        }
+        result = await self._send_message(message)
+        logger.info(f"Updated device registry: {device_id}")
+        return result
+    
+    async def remove_device_registry_entry(self, device_id: str) -> dict:
+        """
+        Remove device from Device Registry
+        
+        Args:
+            device_id: Device ID to remove
+            
+        Returns:
+            Removal result
+        """
+        result = await self._send_message({
+            'type': 'config/device_registry/remove',
+            'device_id': device_id
+        })
+        logger.info(f"Removed device from registry: {device_id}")
+        return result
 
 
 # Global WebSocket client instance

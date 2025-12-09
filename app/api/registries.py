@@ -189,7 +189,10 @@ async def get_area_registry_entry(area_id: str):
         ws_client = await get_ws_client()
         area = await ws_client.get_area_registry_entry(area_id)
         
+        logger.debug(f"get_area_registry_entry returned for {area_id}: {area}")
+        
         if not area:
+            logger.warning(f"Area {area_id} not found, returning 404")
             raise HTTPException(status_code=404, detail=f"Area not found in registry: {area_id}")
         
         return {
@@ -327,7 +330,10 @@ async def get_device_registry_entry(device_id: str):
         ws_client = await get_ws_client()
         device = await ws_client.get_device_registry_entry(device_id)
         
+        logger.debug(f"get_device_registry_entry returned for {device_id}: {device}")
+        
         if not device:
+            logger.warning(f"Device {device_id} not found, returning 404")
             raise HTTPException(status_code=404, detail=f"Device not found in registry: {device_id}")
         
         return {
@@ -414,4 +420,5 @@ async def remove_device_registry_entry(
     except Exception as e:
         logger.error(f"Failed to remove Device Registry entry: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to remove Device Registry entry: {str(e)}")
+
 

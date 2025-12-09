@@ -452,14 +452,38 @@ class HAWebSocketClient:
         Returns:
             Area registry entry
         """
-        result = await self._send_message({
-            'type': 'config/area_registry/get',
-            'area_id': area_id
-        })
-        # Handle wrapped response format
-        if isinstance(result, dict) and 'result' in result:
-            return result['result']
-        return result or {}
+        try:
+            result = await self._send_message({
+                'type': 'config/area_registry/get',
+                'area_id': area_id
+            })
+            logger.debug(f"get_area_registry_entry result for {area_id}: {result}")
+            
+            # Handle wrapped response format
+            if isinstance(result, dict):
+                # Check for error in result
+                if result.get('success') is False:
+                    error = result.get('error', {})
+                    logger.warning(f"Area registry get failed: {error}")
+                    return {}
+                
+                # Handle different response formats
+                if 'result' in result:
+                    return result['result'] or {}
+                # If result is the area entry itself
+                if 'area_id' in result:
+                    return result
+                    
+            return result or {}
+        except Exception as e:
+            logger.error(f"Error getting area registry entry {area_id}: {e}")
+            # Fallback: get from list
+            logger.info(f"Falling back to list method for area {area_id}")
+            areas = await self.get_area_registry_list()
+            for area in areas:
+                if area.get('area_id') == area_id:
+                    return area
+            return {}
     
     async def create_area_registry_entry(self, name: str, aliases: list = None) -> dict:
         """
@@ -547,14 +571,38 @@ class HAWebSocketClient:
         Returns:
             Device registry entry
         """
-        result = await self._send_message({
-            'type': 'config/device_registry/get',
-            'device_id': device_id
-        })
-        # Handle wrapped response format
-        if isinstance(result, dict) and 'result' in result:
-            return result['result']
-        return result or {}
+        try:
+            result = await self._send_message({
+                'type': 'config/device_registry/get',
+                'device_id': device_id
+            })
+            logger.debug(f"get_device_registry_entry result for {device_id}: {result}")
+            
+            # Handle wrapped response format
+            if isinstance(result, dict):
+                # Check for error in result
+                if result.get('success') is False:
+                    error = result.get('error', {})
+                    logger.warning(f"Device registry get failed: {error}")
+                    return {}
+                
+                # Handle different response formats
+                if 'result' in result:
+                    return result['result'] or {}
+                # If result is the device entry itself
+                if 'id' in result or 'device_id' in result:
+                    return result
+                    
+            return result or {}
+        except Exception as e:
+            logger.error(f"Error getting device registry entry {device_id}: {e}")
+            # Fallback: get from list
+            logger.info(f"Falling back to list method for device {device_id}")
+            devices = await self.get_device_registry_list()
+            for device in devices:
+                if device.get('id') == device_id:
+                    return device
+            return {}
     
     async def update_device_registry_entry(self, device_id: str, **kwargs) -> dict:
         """

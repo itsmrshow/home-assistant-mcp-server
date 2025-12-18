@@ -2,6 +2,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.10.6] - 2025-12-18
+
+### 🐛 HACS Repositories Access Fix & Improvements
+
+**Fixed HACS repositories list functionality for HACS 2.0+**
+
+- ✅ **Fixed repository listing**: Changed from reading `sensor.hacs_*` entities (not available in HACS 2.0) to reading `/config/.storage/hacs.repositories` file directly
+- ✅ **Corrected data structure parsing**: Fixed parsing to read repositories from `data` object directly (not `data.repositories`)
+- ✅ **Fixed field mappings**: Corrected field names to match HACS storage format:
+  - `version_installed` instead of `installed_version`
+  - `stargazers_count` instead of `stars`
+- ✅ **Enhanced repository information**: Now extracts full repository details including name, category, versions, stars, downloads, and descriptions
+
+**Improved installation and update functions:**
+
+- ✅ **Installation verification**: Added automatic verification by checking storage file after repository installation
+- ✅ **Version tracking**: Added tracking of repository versions before `update_all` operation for comparison
+- ✅ **Enhanced logging**: Improved logging for better diagnostics (verification status, repository counts, WebSocket results)
+- ✅ **Detailed API responses**: Functions now return detailed status information including:
+  - Installation verification status
+  - List of repositories with versions before update
+  - WebSocket service call results
+  - Next steps guidance
+
+**Technical improvements:**
+
+- ✅ **Better error handling**: Graceful handling of JSON parsing errors and missing storage files
+- ✅ **Fallback mechanisms**: Added fallback to alternative data structures if primary structure not found
+- ✅ **Comprehensive logging**: Added debug and info logs throughout the process for troubleshooting
+
 ## [2.10.5] - 2025-12-09
 
 ### ✨ Registry Management & Dead Entity Detection

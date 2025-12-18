@@ -243,9 +243,20 @@ async def list_hacs_repositories(category: Optional[str] = None):
                 import json
                 with open(hacs_storage_path, 'r', encoding='utf-8') as f:
                     storage_data = json.load(f)
-                    
+                
+                # Log file structure for debugging
+                logger.debug(f"HACS storage file keys: {list(storage_data.keys())}")
+                
                 # HACS stores data in 'data' -> 'repositories' structure
                 repositories_data = storage_data.get('data', {}).get('repositories', {})
+                
+                # If 'data' -> 'repositories' is empty, try alternative structures
+                if not repositories_data:
+                    # Try direct 'repositories' key
+                    repositories_data = storage_data.get('repositories', {})
+                    logger.debug(f"Trying direct 'repositories' key, found {len(repositories_data)} entries")
+                
+                logger.info(f"HACS storage file contains {len(repositories_data)} repository entries")
                 
                 for repo_id, repo_info in repositories_data.items():
                     repo_category = repo_info.get('category', '')

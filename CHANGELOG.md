@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.10.6] - 2025-12-18
+## [2.10.7] - 2025-12-18
 
 ### 🐛 HACS Repositories Access Fix & Improvements
 

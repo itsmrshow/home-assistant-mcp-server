@@ -629,7 +629,6 @@ async def health():
         "status": "healthy",
         "version": AGENT_VERSION,
         "config_path": os.getenv('CONFIG_PATH', '/config'),
-        "git_enabled": os.getenv('ENABLE_GIT', 'false') == 'true',
         "git_versioning_auto": os.getenv('GIT_VERSIONING_AUTO', 'true') == 'true',
         "ai_instructions": "/api/ai/instructions"
     }

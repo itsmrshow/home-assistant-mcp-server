@@ -36,8 +36,6 @@ async def create_backup(backup: BackupRequest):
     Returns suggested message that user can edit and confirm.
     """
     try:
-        if not git_manager.enabled:
-            raise HTTPException(status_code=400, detail="Git versioning is not enabled")
         
         # If no message provided and auto mode is disabled, return suggested message
         if backup.message is None and not git_manager.git_versioning_auto:
@@ -100,8 +98,6 @@ async def get_history(limit: int = 20):
     Returns list of commits with details
     """
     try:
-        if not git_manager.enabled:
-            raise HTTPException(status_code=400, detail="Git versioning is not enabled")
         
         history = await git_manager.get_history(limit)
         
@@ -125,8 +121,6 @@ async def rollback_to_commit_path(commit_hash: str):
     - POST `/api/backup/rollback/a1b2c3d4`
     """
     try:
-        if not git_manager.enabled:
-            raise HTTPException(status_code=400, detail="Git versioning is not enabled")
         
         result = await git_manager.rollback(commit_hash)
         
@@ -172,8 +166,6 @@ async def get_diff(
     - `/api/backup/diff?commit1=a1b2c3d4&commit2=e5f6g7h8` - Between two commits
     """
     try:
-        if not git_manager.enabled:
-            raise HTTPException(status_code=400, detail="Git versioning is not enabled")
         
         diff = await git_manager.get_diff(commit1, commit2)
         
@@ -199,8 +191,6 @@ async def create_checkpoint(user_request: str = Query(..., description="Descript
     - POST `/api/backup/checkpoint?user_request=Create nice_dark theme with dark blue header`
     """
     try:
-        if not git_manager.enabled:
-            raise HTTPException(status_code=400, detail="Git versioning is not enabled")
         
         if not user_request:
             user_request = "User request processing"
@@ -253,8 +243,6 @@ async def cleanup_commits(delete_backup_branches: bool = True):
     - POST `/api/backup/cleanup?delete_backup_branches=true`
     """
     try:
-        if not git_manager.enabled:
-            raise HTTPException(status_code=400, detail="Git versioning is not enabled")
         
         result = await git_manager.cleanup_commits(delete_backup_branches=delete_backup_branches)
         
@@ -290,8 +278,6 @@ async def get_pending_changes():
     - diff: full diff (can be large)
     """
     try:
-        if not git_manager.enabled:
-            raise HTTPException(status_code=400, detail="Git versioning is not enabled")
         
         pending_info = await git_manager.get_pending_changes()
         
@@ -332,8 +318,6 @@ async def restore_files(
     ```
     """
     try:
-        if not git_manager.enabled:
-            raise HTTPException(status_code=400, detail="Git versioning is not enabled")
         
         result = await git_manager.restore_files_from_commit(commit_hash, file_patterns)
         

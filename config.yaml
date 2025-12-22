@@ -22,7 +22,6 @@ auth_api: true
 options:
   port: 8099
   log_level: info
-  enable_git_versioning: true
   git_versioning_auto: true
   max_backups: 30
   api_key: ""
@@ -31,7 +30,6 @@ options:
 schema:
   port: int
   log_level: list(debug|info|warning|error)
-  enable_git_versioning: bool
   git_versioning_auto: bool
   max_backups: int
   api_key: str?

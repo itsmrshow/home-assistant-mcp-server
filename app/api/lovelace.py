@@ -364,7 +364,7 @@ async def apply_dashboard(request: ApplyDashboardRequest):
         
         # Commit changes (if not already committed via write_file)
         # Note: write_file already commits if git_versioning_auto is enabled, but we may need to commit config changes
-        if request.create_backup and git_manager.enabled and git_manager.git_versioning_auto:
+        if request.create_backup and git_manager.git_versioning_auto:
             if dashboard_registered:
                 # Config was changed, commit it separately
                 config_commit_msg = request.commit_message or f"Register dashboard in config: {lovelace_path}"

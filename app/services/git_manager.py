@@ -22,17 +22,17 @@ class GitManager:
         # with the user's own Git (e.g. GitHub remote).
         self.shadow_root = self.config_path / 'ha_vibecode_git'
 
-        self.enabled = os.getenv('ENABLE_GIT', 'false').lower() == 'true'
         # git_versioning_auto: if True, commits happen automatically after each operation
         # if False, commits only happen when explicitly requested via /api/backup/commit
+        # Git is always enabled in shadow repo, but commits only happen based on this setting
         self.git_versioning_auto = os.getenv('GIT_VERSIONING_AUTO', 'true').lower() == 'true'
         self.max_backups = int(os.getenv('MAX_BACKUPS', '30'))
-        logger.info(f"GitManager initialized: max_backups={self.max_backups}, enabled={self.enabled}, auto={self.git_versioning_auto}")
+        logger.info(f"GitManager initialized: max_backups={self.max_backups}, auto={self.git_versioning_auto}")
         self.repo = None
         self.processing_request = False  # Flag to disable auto-commits during request processing
         
-        if self.enabled:
-            self._init_repo()
+        # Always initialize shadow repo (Git is always enabled)
+        self._init_repo()
     
     def _init_repo(self):
         """Initialize shadow Git repository used by the agent.
@@ -57,7 +57,6 @@ class GitManager:
                 logger.info(f"Git shadow repository initialized in {self.shadow_root}")
         except Exception as e:
             logger.error(f"Failed to initialize Git: {e}")
-            self.enabled = False
     
     def _create_gitignore(self):
         """(Legacy) Create .gitignore file in config directory to exclude large files.
@@ -308,8 +307,6 @@ secrets.yaml
         This copies only the files we want to version (respecting _should_include_path)
         and removes files from the shadow worktree that are no longer present in /config.
         """
-        if not self.enabled:
-            return
 
         source_root = self.config_path
         shadow_root = self.shadow_root
@@ -374,8 +371,6 @@ secrets.yaml
         - If delete_missing is True: remove files from /config that are tracked in the
           shadow repo but are missing in its current worktree.
         """
-        if not self.enabled:
-            return
 
         shadow_root = self.shadow_root
         source_root = shadow_root
@@ -455,7 +450,7 @@ secrets.yaml
             skip_if_processing: Skip if request processing in progress
             force: Force commit even if git_versioning_auto is False (for rollback/cleanup)
         """
-        if not self.enabled or not self.repo:
+        if not self.repo:
             return None
         
         # Skip auto-commits if processing a request (unless explicitly requested)
@@ -545,7 +540,7 @@ secrets.yaml
     
     async def create_checkpoint(self, user_request: str) -> Dict:
         """Create checkpoint with tag at the start of user request processing"""
-        if not self.enabled or not self.repo:
+        if not self.repo:
             return {
                 "success": False,
                 "message": "Git versioning not enabled",
@@ -913,7 +908,7 @@ secrets.yaml
         Returns:
             Dict with cleanup results
         """
-        if not self.enabled or not self.repo:
+        if not self.repo:
             return {
                 "success": False,
                 "message": "Git versioning not enabled",
@@ -1065,7 +1060,7 @@ secrets.yaml
     
     async def get_history(self, limit: int = 20) -> List[Dict]:
         """Get commit history"""
-        if not self.enabled or not self.repo:
+        if not self.repo:
             return []
         
         try:
@@ -1095,7 +1090,7 @@ secrets.yaml
             - summary: Dict with counts
             - diff: str - full diff (optional, can be large)
         """
-        if not self.enabled or not self.repo:
+        if not self.repo:
             return {
                 "has_changes": False,
                 "files_modified": [],
@@ -1242,7 +1237,7 @@ secrets.yaml
     
     async def rollback(self, commit_hash: str) -> Dict:
         """Rollback to specific commit"""
-        if not self.enabled or not self.repo:
+        if not self.repo:
             raise Exception("Git versioning not enabled")
         
         try:
@@ -1269,7 +1264,7 @@ secrets.yaml
     
     async def get_diff(self, commit1: str = None, commit2: str = None) -> str:
         """Get diff between commits or current changes"""
-        if not self.enabled or not self.repo:
+        if not self.repo:
             return ""
         
         try:
@@ -1319,9 +1314,6 @@ secrets.yaml
         Returns:
             Dict with success status and restored files list
         """
-        if not self.enabled:
-            raise Exception("Git versioning not enabled")
-        
         if not self.repo or not self.repo.working_dir:
             raise Exception("Git repository not available or working directory missing")
         

@@ -517,7 +517,8 @@ Common issues:
 
 ### Git versioning not working
 
-- Check `enable_git_versioning` is `true`
+- Git versioning is always enabled in shadow repository (`/config/ha_vibecode_git`)
+- Check `git_versioning_auto` setting for auto/manual commit mode
 - View logs for Git errors
 - Ensure `/config` is writable
 

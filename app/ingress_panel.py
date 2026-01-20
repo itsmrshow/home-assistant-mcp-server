@@ -31,13 +31,18 @@ def generate_ingress_html(api_key: str, agent_version: str) -> str:
   }}
 }}'''
     
-    # VS Code + Copilot TOML config for user to copy (based on user feedback - config.toml works better)
-    vscode_toml_config = f'''[mcp_servers.home-assistant]
-command = "npx"
-args = ["-y", "@coolver/home-assistant-mcp@latest"]
-env = {{ 
-  "HA_AGENT_URL" = "http://homeassistant.local:8099",
-  "HA_AGENT_KEY" = "{api_key}"
+    # VS Code + Copilot JSON config (uses mcp.json)
+    vscode_json_config = f'''{{
+  "servers": {{
+    "home-assistant": {{
+      "command": "npx",
+      "args": ["-y", "@coolver/home-assistant-mcp@latest"],
+      "env": {{
+        "HA_AGENT_URL": "http://homeassistant.local:8099",
+        "HA_AGENT_KEY": "{api_key}"
+      }}
+    }}
+  }}
 }}'''
     
     # VS Code + Codex TOML config (uses ~/.codex/config.toml)
@@ -74,7 +79,7 @@ env = {{
         agent_version=agent_version,
         cursor_json_config=cursor_json_config,
         claude_json_config=claude_json_config,
-        vscode_toml_config=vscode_toml_config,
+        vscode_json_config=vscode_json_config,
         vscode_codex_toml_config=vscode_codex_toml_config
     )
     

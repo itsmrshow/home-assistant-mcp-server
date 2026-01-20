@@ -782,7 +782,7 @@
             </div>
             
             <div class="config-block">
-                <pre id="vscodeConfigText">{{ vscode_toml_config }}</pre>
+                <pre id="vscodeConfigText">{{ vscode_json_config }}</pre>
             </div>
             
             <div style="display: flex; gap: 12px; flex-wrap: wrap;">
@@ -823,7 +823,7 @@
                         <code>Cmd+Shift+P</code> (macOS)
                     </p>
                     <p style="margin-top: 8px;">Type: <strong>MCP: Open User Configuration</strong></p>
-                    <p>Click it – this will open the MCP configuration file (<code>config.toml</code>).</p>
+                    <p>Click it – this will open the MCP configuration file.</p>
                 </div>
             </div>
             
@@ -831,8 +831,13 @@
                 <div class="step-number">2</div>
                 <div class="step-content">
                     <h3>Paste Configuration</h3>
-                    <p>In the opened configuration file (<code>config.toml</code>), paste the TOML configuration you copied in Step 3. The configuration should be added to the file.</p>
-                    <p style="margin-top: 12px;"><strong>Note:</strong> If the file is empty or doesn't exist, VS Code will create it. Save the file (Cmd+S / Ctrl+S) after pasting.</p>
+                    <p>In the opened configuration file (<code>mcp.json</code>), you will see an empty configuration:</p>
+                    <div style="margin: 12px 0; padding: 12px; background: #0d1117; border: 2px solid #30363d; border-radius: 6px;">
+                        <pre style="margin: 0; color: #79c0ff; font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, monospace; font-size: 12px;">{
+  "servers": {}
+}</pre>
+                    </div>
+                    <p style="margin-top: 12px;">The file will be open in VS Code editor with the cursor positioned inside the empty <code>servers</code> object. Paste the configuration you copied in Step 3 into this file, replacing the empty <code>servers</code> object, and save the file (Cmd+S / Ctrl+S).</p>
                 </div>
             </div>
             
@@ -1050,7 +1055,7 @@
         let currentTab = 'cursor';
         let cursorConfig = `{{ cursor_json_config }}`;
         let claudeConfig = `{{ claude_json_config }}`;
-        let vscodeConfig = `{{ vscode_toml_config }}`;
+        let vscodeConfig = `{{ vscode_json_config }}`;
         let codexConfig = `{{ vscode_codex_toml_config }}`;
         let fullKey = "{{ api_key }}";
         
@@ -1227,7 +1232,7 @@
             } else if (currentTab === 'claude') {
                 configPath = '~/.claude.json or .mcp.json';
             } else if (currentTab === 'vscode') {
-                configPath = 'VS Code MCP config.toml';
+                configPath = 'VS Code MCP settings';
             } else if (currentTab === 'codex') {
                 configPath = '~/.codex/config.toml';
             }
@@ -1469,10 +1474,10 @@
                         document.getElementById('claudeConfigText').textContent = claudeConfig;
                     }
                     
-                    // Update vscode config (TOML format)
+                    // Update vscode config (JSON format)
                     vscodeConfig = vscodeConfig.replace(
-                        /"HA_AGENT_KEY" = ".*?"/,
-                        `"HA_AGENT_KEY" = "${result.new_key}"`
+                        /"HA_AGENT_KEY": ".*?"/,
+                        `"HA_AGENT_KEY": "${result.new_key}"`
                     );
                     if (document.getElementById('vscodeConfigText')) {
                         document.getElementById('vscodeConfigText').textContent = vscodeConfig;
@@ -1505,7 +1510,7 @@
                         configPath = '~/.claude.json or .mcp.json';
                     } else if (currentTab === 'vscode') {
                         editorName = 'VS Code';
-                        configPath = 'VS Code MCP config.toml';
+                        configPath = 'VS Code MCP settings';
                     } else if (currentTab === 'codex') {
                         editorName = 'VS Code + Codex';
                         configPath = '~/.codex/config.toml';

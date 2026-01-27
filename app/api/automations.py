@@ -258,6 +258,7 @@ async def _export_automations_to_git(commit_message: str):
         export_dir.mkdir(parents=True, exist_ok=True)
         
         # Export each automation to its own file
+        # Also try to determine original location for better rollback support
         exported_count = 0
         for automation in automations:
             automation_id = automation.get('id')
@@ -265,9 +266,59 @@ async def _export_automations_to_git(commit_message: str):
                 logger.warning(f"Skipping automation without ID: {automation}")
                 continue
             
+            # Try to find original location (for rollback context)
+            # Note: This is informational only - REST API will handle actual storage location
+            automation_with_meta = dict(automation)
+            try:
+                # Try to determine if automation is in packages or storage
+                from app.services.file_manager import file_manager
+                import json
+                from pathlib import Path
+                
+                # Check packages
+                packages_dir = file_manager.config_path / 'packages'
+                if packages_dir.exists():
+                    for yaml_file in packages_dir.rglob('*.yaml'):
+                        try:
+                            content = yaml_file.read_text(encoding='utf-8')
+                            data = yaml.safe_load(content)
+                            if isinstance(data, dict) and 'automation' in data:
+                                pkg_automations = data['automation']
+                                found = False
+                                if isinstance(pkg_automations, list):
+                                    found = any(auto.get('id') == automation_id for auto in pkg_automations)
+                                elif isinstance(pkg_automations, dict):
+                                    found = automation_id in pkg_automations
+                                
+                                if found:
+                                    rel_path = yaml_file.relative_to(file_manager.config_path)
+                                    automation_with_meta['_export_metadata'] = {
+                                        'original_location': 'packages',
+                                        'original_file': str(rel_path)
+                                    }
+                                    break
+                        except Exception:
+                            continue
+                
+                # Check storage if not found in packages
+                if '_export_metadata' not in automation_with_meta:
+                    storage_file = file_manager.config_path / '.storage' / 'automation.storage'
+                    if storage_file.exists():
+                        content = storage_file.read_text(encoding='utf-8')
+                        storage_data = json.loads(content)
+                        if 'data' in storage_data and 'automations' in storage_data['data']:
+                            if any(auto.get('id') == automation_id for auto in storage_data['data']['automations']):
+                                automation_with_meta['_export_metadata'] = {
+                                    'original_location': 'storage',
+                                    'original_file': '.storage/automation.storage'
+                                }
+            except Exception:
+                # If we can't determine location, that's fine - REST API will handle it
+                pass
+            
             # Write automation to export/automations/<id>.yaml
             automation_file = export_dir / f"{automation_id}.yaml"
-            automation_yaml = yaml.dump(automation, allow_unicode=True, default_flow_style=False, sort_keys=False)
+            automation_yaml = yaml.dump(automation_with_meta, allow_unicode=True, default_flow_style=False, sort_keys=False)
             automation_file.write_text(automation_yaml, encoding='utf-8')
             exported_count += 1
         
@@ -328,16 +379,29 @@ async def _apply_automations_from_git_export(export_dir: Path) -> int:
                 
                 automation_id = automation_config.get('id') or automation_file.stem
                 
+                # Remove export metadata (if present) before applying
+                # This metadata is only for informational purposes
+                export_metadata = automation_config.pop('_export_metadata', None)
+                
                 # Check if automation exists
                 try:
                     existing = await ha_client.get_automation(automation_id)
-                    # Update existing automation
+                    # Update existing automation via REST API
+                    # REST API will preserve original location if automation still exists
                     await ha_client.update_automation(automation_id, automation_config)
-                    logger.debug(f"Updated automation from Git export: {automation_id}")
+                    logger.debug(f"Updated automation from Git export: {automation_id}" + 
+                               (f" (was in {export_metadata.get('original_file')})" if export_metadata else ""))
                 except Exception:
-                    # Automation doesn't exist, create it
+                    # Automation doesn't exist, create it via REST API
+                    # Note: New automations are created in automations.yaml by default
+                    # If original location was packages/*, user may need to move it manually
                     await ha_client.create_automation(automation_config)
-                    logger.debug(f"Created automation from Git export: {automation_id}")
+                    if export_metadata and export_metadata.get('original_location') != 'automations.yaml':
+                        logger.info(f"Created automation from Git export: {automation_id} "
+                                  f"(original location was {export_metadata.get('original_file')}, "
+                                  f"but REST API created it in automations.yaml - may need manual move)")
+                    else:
+                        logger.debug(f"Created automation from Git export: {automation_id}")
                 
                 applied_count += 1
                 

@@ -409,7 +409,11 @@ class HomeAssistantClient:
     
     async def create_automation(self, automation_config: Dict) -> Dict:
         """
-        Create new automation via WebSocket API
+        Create new automation via Home Assistant REST API
+        
+        Uses POST /api/config/automation/config/{entity_id} endpoint.
+        Home Assistant automatically determines where to store the automation
+        (automations.yaml, packages/*, or .storage).
         
         Args:
             automation_config: Automation configuration dict (must include 'id')
@@ -422,38 +426,27 @@ class HomeAssistantClient:
             raise ValueError("Automation config must include 'id' field")
         
         try:
-            # Import here to avoid circular dependency
-            from app.services.ha_websocket import get_ws_client
+            # Use REST API endpoint: POST /api/config/automation/config/{entity_id}
+            entity_id = f"automation.{automation_id}"
+            endpoint = f"config/automation/config/{entity_id}"
             
-            ws_client = await get_ws_client()
-            result = await ws_client._send_message({
-                'type': 'config/automation/create',
-                'automation_id': automation_id,
-                **automation_config
-            })
+            result = await self._request('POST', endpoint, data=automation_config)
             
-            # Log the raw response for debugging
-            logger.debug(f"WebSocket create_automation response: {result}")
-            
-            # Handle wrapped response format
-            if isinstance(result, dict) and 'result' in result:
-                result = result['result']
-            
-            # Check if result indicates success
-            if result is None or (isinstance(result, dict) and result.get('success') is False):
-                error_msg = result.get('error', {}).get('message', 'Unknown error') if isinstance(result, dict) else 'No result returned'
-                logger.error(f"WebSocket create_automation returned failure: {error_msg}")
-                raise Exception(f"Failed to create automation: {error_msg}")
-            
-            logger.info(f"Created automation via WebSocket API: {automation_id}")
+            logger.info(f"Created automation via REST API: {automation_id}")
             return result
         except Exception as e:
-            logger.error(f"Failed to create automation {automation_id} via WebSocket API: {e}")
+            error_msg = str(e)
+            if '409' in error_msg or 'already exists' in error_msg.lower():
+                raise ValueError(f"Automation with ID '{automation_id}' already exists")
+            logger.error(f"Failed to create automation {automation_id} via REST API: {e}")
             raise
     
     async def update_automation(self, automation_id: str, automation_config: Dict) -> Dict:
         """
-        Update existing automation via WebSocket API
+        Update existing automation via Home Assistant REST API
+        
+        Uses POST /api/config/automation/config/{entity_id} endpoint.
+        Home Assistant automatically updates the automation in its original location.
         
         Args:
             automation_id: Automation ID
@@ -463,33 +456,31 @@ class HomeAssistantClient:
             Updated automation configuration
         """
         try:
-            # Import here to avoid circular dependency
-            from app.services.ha_websocket import get_ws_client
-            
-            ws_client = await get_ws_client()
             # Ensure 'id' matches
             config = dict(automation_config)
             config['id'] = automation_id
             
-            result = await ws_client._send_message({
-                'type': 'config/automation/update',
-                'automation_id': automation_id,
-                **config
-            })
+            # Use REST API endpoint: POST /api/config/automation/config/{entity_id}
+            entity_id = f"automation.{automation_id}"
+            endpoint = f"config/automation/config/{entity_id}"
             
-            # Handle wrapped response format
-            if isinstance(result, dict) and 'result' in result:
-                result = result['result']
+            result = await self._request('POST', endpoint, data=config)
             
-            logger.info(f"Updated automation via WebSocket API: {automation_id}")
+            logger.info(f"Updated automation via REST API: {automation_id}")
             return result
         except Exception as e:
-            logger.error(f"Failed to update automation {automation_id} via WebSocket API: {e}")
+            error_msg = str(e)
+            if '404' in error_msg or 'not found' in error_msg.lower():
+                raise Exception(f"Automation '{automation_id}' not found")
+            logger.error(f"Failed to update automation {automation_id} via REST API: {e}")
             raise
     
     async def delete_automation(self, automation_id: str) -> Dict:
         """
-        Delete automation via WebSocket API
+        Delete automation via Home Assistant REST API
+        
+        Uses DELETE /api/config/automation/config/{entity_id} endpoint.
+        Home Assistant automatically removes the automation from its original location.
         
         Args:
             automation_id: Automation ID to delete
@@ -498,26 +489,19 @@ class HomeAssistantClient:
             Deletion result
         """
         try:
-            # Import here to avoid circular dependency
-            from app.services.ha_websocket import get_ws_client
+            # Use REST API endpoint: DELETE /api/config/automation/config/{entity_id}
+            entity_id = f"automation.{automation_id}"
+            endpoint = f"config/automation/config/{entity_id}"
             
-            ws_client = await get_ws_client()
-            result = await ws_client._send_message({
-                'type': 'config/automation/delete',
-                'automation_id': automation_id
-            })
+            result = await self._request('DELETE', endpoint)
             
-            # Handle wrapped response format
-            if isinstance(result, dict) and 'result' in result:
-                result = result['result']
-            
-            logger.info(f"Deleted automation via WebSocket API: {automation_id}")
-            return result
+            logger.info(f"Deleted automation via REST API: {automation_id}")
+            return {'success': True, 'automation_id': automation_id, 'result': result}
         except Exception as e:
             error_msg = str(e)
             if '404' in error_msg or 'not found' in error_msg.lower():
                 raise Exception(f"Automation not found: {automation_id}")
-            logger.error(f"Failed to delete automation {automation_id} via WebSocket API: {e}")
+            logger.error(f"Failed to delete automation {automation_id} via REST API: {e}")
             raise
     
     # ==================== Script API ====================

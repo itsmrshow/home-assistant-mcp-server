@@ -236,7 +236,64 @@ class HomeAssistantClient:
             automations = []
             automation_ids_seen = set()
             
-            # Get automation IDs from entity registry
+            # OPTIMIZATION: Read all files ONCE and create a cache
+            # This prevents reading automations.yaml multiple times (once per automation from Entity Registry)
+            automation_cache = {}  # automation_id -> config dict
+            
+            # Read automations.yaml ONCE
+            try:
+                content = await file_manager.read_file('automations.yaml', suppress_not_found_logging=True)
+                file_automations = yaml.safe_load(content) or []
+                if isinstance(file_automations, list):
+                    for auto in file_automations:
+                        auto_id = auto.get('id')
+                        if auto_id:
+                            automation_cache[auto_id] = auto
+            except Exception:
+                pass
+            
+            # Read packages/*.yaml files ONCE
+            try:
+                packages_dir = file_manager.config_path / 'packages'
+                if packages_dir.exists():
+                    for yaml_file in packages_dir.rglob('*.yaml'):
+                        try:
+                            content = yaml_file.read_text(encoding='utf-8')
+                            data = yaml.safe_load(content)
+                            if isinstance(data, dict) and 'automation' in data:
+                                pkg_automations = data['automation']
+                                if isinstance(pkg_automations, list):
+                                    for auto in pkg_automations:
+                                        auto_id = auto.get('id')
+                                        if auto_id:
+                                            automation_cache[auto_id] = auto
+                                elif isinstance(pkg_automations, dict):
+                                    # Handle dict format: {id: config}
+                                    for auto_id, auto_config in pkg_automations.items():
+                                        auto = dict(auto_config) if isinstance(auto_config, dict) else auto_config
+                                        if isinstance(auto, dict):
+                                            auto['id'] = auto_id
+                                        automation_cache[auto_id] = auto
+                        except Exception:
+                            continue
+            except Exception:
+                pass
+            
+            # Read .storage (UI-created automations) ONCE
+            try:
+                storage_file = file_manager.config_path / '.storage' / 'automation.storage'
+                if storage_file.exists():
+                    content = storage_file.read_text(encoding='utf-8')
+                    storage_data = json.loads(content)
+                    if 'data' in storage_data and 'automations' in storage_data['data']:
+                        for auto in storage_data['data']['automations']:
+                            auto_id = auto.get('id')
+                            if auto_id:
+                                automation_cache[auto_id] = auto
+            except Exception:
+                pass
+            
+            # Now process Entity Registry automations using the cache
             for entity in automation_entities:
                 entity_id = entity.get('entity_id', '')
                 if not entity_id.startswith('automation.'):
@@ -256,61 +313,19 @@ class HomeAssistantClient:
                     continue
                 automation_ids_seen.add(automation_id)
                 
-                # Try to get automation config
-                try:
-                    config = await self.get_automation(automation_id)
-                    if config:
-                        automations.append(config)
-                except Exception:
-                    # If we can't get config, at least add the ID
+                # Get config from cache (no file reading!)
+                config = automation_cache.get(automation_id)
+                if config:
+                    automations.append(config)
+                else:
+                    # If not in cache, at least add the ID
                     automations.append({'id': automation_id})
             
-            # Also try to read from files (for file-based automations not in registry)
-            try:
-                # Read automations.yaml
-                try:
-                    content = await file_manager.read_file('automations.yaml', suppress_not_found_logging=True)
-                    file_automations = yaml.safe_load(content) or []
-                    if isinstance(file_automations, list):
-                        for auto in file_automations:
-                            auto_id = auto.get('id')
-                            if auto_id and auto_id not in automation_ids_seen:
-                                automations.append(auto)
-                                automation_ids_seen.add(auto_id)
-                except Exception:
-                    pass
-                
-                # Read packages/*.yaml files
-                try:
-                    packages_dir = file_manager.config_path / 'packages'
-                    if packages_dir.exists():
-                        for yaml_file in packages_dir.rglob('*.yaml'):
-                            try:
-                                content = yaml_file.read_text(encoding='utf-8')
-                                data = yaml.safe_load(content)
-                                if isinstance(data, dict) and 'automation' in data:
-                                    pkg_automations = data['automation']
-                                    if isinstance(pkg_automations, list):
-                                        for auto in pkg_automations:
-                                            auto_id = auto.get('id')
-                                            if auto_id and auto_id not in automation_ids_seen:
-                                                automations.append(auto)
-                                                automation_ids_seen.add(auto_id)
-                                    elif isinstance(pkg_automations, dict):
-                                        # Handle dict format: {id: config}
-                                        for auto_id, auto_config in pkg_automations.items():
-                                            if auto_id not in automation_ids_seen:
-                                                auto = dict(auto_config) if isinstance(auto_config, dict) else auto_config
-                                                if isinstance(auto, dict):
-                                                    auto['id'] = auto_id
-                                                automations.append(auto)
-                                                automation_ids_seen.add(auto_id)
-                            except Exception:
-                                continue
-                except Exception:
-                    pass
-            except Exception as e:
-                logger.warning(f"Failed to read automations from files: {e}")
+            # Add file-based automations not in Entity Registry
+            for auto_id, auto_config in automation_cache.items():
+                if auto_id not in automation_ids_seen:
+                    automations.append(auto_config)
+                    automation_ids_seen.add(auto_id)
             
             return automations
             
@@ -417,9 +432,18 @@ class HomeAssistantClient:
                 **automation_config
             })
             
+            # Log the raw response for debugging
+            logger.debug(f"WebSocket create_automation response: {result}")
+            
             # Handle wrapped response format
             if isinstance(result, dict) and 'result' in result:
                 result = result['result']
+            
+            # Check if result indicates success
+            if result is None or (isinstance(result, dict) and result.get('success') is False):
+                error_msg = result.get('error', {}).get('message', 'Unknown error') if isinstance(result, dict) else 'No result returned'
+                logger.error(f"WebSocket create_automation returned failure: {error_msg}")
+                raise Exception(f"Failed to create automation: {error_msg}")
             
             logger.info(f"Created automation via WebSocket API: {automation_id}")
             return result

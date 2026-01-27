@@ -168,7 +168,16 @@ class HAWebSocketClient:
             future = self.pending_requests.pop(msg_id)
             if not future.done():
                 if msg_type == 'result':
-                    future.set_result(data.get('result'))
+                    result = data.get('result')
+                    # Check for errors in result
+                    if isinstance(result, dict) and result.get('success') is False:
+                        error = result.get('error', {})
+                        error_code = error.get('code', 'unknown_error')
+                        error_message = error.get('message', str(error)) if isinstance(error, dict) else str(error)
+                        logger.error(f"WebSocket command failed: {error_code} - {error_message}")
+                        future.set_exception(Exception(f"WebSocket error: {error_code} - {error_message}"))
+                    else:
+                        future.set_result(result)
                 else:
                     future.set_result(data)
         

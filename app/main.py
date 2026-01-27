@@ -37,12 +37,29 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
+<<<<<<< HEAD
 # CORS middleware removed for security
 # This application is accessed via:
 # - MCP clients (not browser-based, CORS doesn't apply)
 # - Home Assistant ingress (same-origin)
 # - Local network (same-origin or direct)
 # If CORS is needed, configure specific origins via CORS_ALLOWED_ORIGINS env var
+=======
+# CORS
+# Note:
+# - MCP clients (Cursor, VS Code, Codex, Claude Code, etc.) talk to the agent as
+#   regular HTTP clients and are NOT affected by CORS (CORS is a browser concern).
+# - We still keep a permissive configuration here for backwards compatibility,
+#   but the critical security issue is addressed by requiring authentication for
+#   API key regeneration (see /api/regenerate-key below).
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+>>>>>>> 1dafb08 (security: require auth for API key regeneration)
 
 # Track MCP client versions (to avoid logging on every request)
 mcp_clients_logged = set()
@@ -207,7 +224,15 @@ async def ingress_panel():
 
 @app.post("/api/regenerate-key", dependencies=[Depends(verify_token)])
 async def regenerate_api_key():
-    """Regenerate API key (requires authentication)"""
+    """
+    Regenerate API key.
+    
+    Security:
+    - Requires a valid API key via Authorization: Bearer <API_KEY>
+    - This prevents unauthenticated regeneration from arbitrary web pages,
+      while still allowing the Ingress UI to call this endpoint as long as
+      it passes the current key in the Authorization header.
+    """
     global API_KEY
     
     try:

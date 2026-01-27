@@ -503,25 +503,47 @@ class HomeAssistantClient:
         Uses POST /api/config/automation/config/{entity_id} endpoint.
         Home Assistant automatically updates the automation in its original location.
         
+        First tries to find the automation to get its actual entity_id (which may differ
+        from automation_id for UI-created automations).
+        
         Args:
-            automation_id: Automation ID
+            automation_id: Automation ID (may be entity_id without 'automation.' prefix)
             automation_config: Updated automation configuration
             
         Returns:
             Updated automation configuration
         """
         try:
+            # First, try to get the automation to find its actual entity_id
+            # This handles cases where Entity Registry uses different entity_id than id
+            try:
+                existing_auto = await self.get_automation(automation_id)
+                # Use entity_id from existing automation if available
+                actual_entity_id = existing_auto.get('entity_id')
+                if actual_entity_id and actual_entity_id.startswith('automation.'):
+                    entity_id = actual_entity_id
+                else:
+                    # Fallback to constructing from automation_id
+                    entity_id = f"automation.{automation_id}"
+            except Exception:
+                # If get_automation fails, try to find location to get entity_id
+                location = await self._find_automation_location(automation_id)
+                if location and location.get('entity_id'):
+                    entity_id = location['entity_id']
+                else:
+                    # Fallback to constructing from automation_id
+                    entity_id = f"automation.{automation_id}"
+            
             # Ensure 'id' matches
             config = dict(automation_config)
             config['id'] = automation_id
             
             # Use REST API endpoint: POST /api/config/automation/config/{entity_id}
-            entity_id = f"automation.{automation_id}"
             endpoint = f"config/automation/config/{entity_id}"
             
             result = await self._request('POST', endpoint, data=config)
             
-            logger.info(f"Updated automation via REST API: {automation_id}")
+            logger.info(f"Updated automation via REST API: {automation_id} (entity_id: {entity_id})")
             return result
         except Exception as e:
             error_msg = str(e)
@@ -534,14 +556,34 @@ class HomeAssistantClient:
         """
         Find where an automation is stored (automations.yaml, packages/*.yaml, or .storage)
         
+        Checks both 'id' field and 'entity_id' (with and without 'automation.' prefix)
+        to handle cases where Entity Registry entity_id differs from automation id.
+        
         Returns:
             Dict with keys: 'location' ('automations.yaml', 'packages', or 'storage'),
-                           'file_path' (relative path), 'index' (if applicable)
+                           'file_path' (relative path), 'index' (if applicable),
+                           'entity_id' (actual entity_id from storage if found)
         """
         from app.services.file_manager import file_manager
         import yaml
         import json
         from pathlib import Path
+        
+        # Helper to check if automation matches
+        def matches_automation(auto, target_id):
+            auto_id = auto.get('id')
+            if auto_id == target_id:
+                return True
+            # Also check entity_id (with and without 'automation.' prefix)
+            entity_id = auto.get('entity_id', '')
+            if entity_id:
+                if entity_id.startswith('automation.'):
+                    entity_id_clean = entity_id.replace('automation.', '', 1)
+                else:
+                    entity_id_clean = entity_id
+                if entity_id_clean == target_id or entity_id == target_id:
+                    return True
+            return False
         
         # Try automations.yaml
         try:
@@ -549,8 +591,11 @@ class HomeAssistantClient:
             automations = yaml.safe_load(content) or []
             if isinstance(automations, list):
                 for i, auto in enumerate(automations):
-                    if auto.get('id') == automation_id:
-                        return {'location': 'automations.yaml', 'file_path': 'automations.yaml', 'index': i}
+                    if matches_automation(auto, automation_id):
+                        result = {'location': 'automations.yaml', 'file_path': 'automations.yaml', 'index': i}
+                        if auto.get('entity_id'):
+                            result['entity_id'] = auto.get('entity_id')
+                        return result
         except Exception:
             pass
         
@@ -568,11 +613,25 @@ class HomeAssistantClient:
                             
                             if isinstance(pkg_automations, list):
                                 for i, auto in enumerate(pkg_automations):
-                                    if auto.get('id') == automation_id:
-                                        return {'location': 'packages', 'file_path': str(rel_path), 'index': i, 'format': 'list'}
+                                    if matches_automation(auto, automation_id):
+                                        result = {'location': 'packages', 'file_path': str(rel_path), 'index': i, 'format': 'list'}
+                                        if auto.get('entity_id'):
+                                            result['entity_id'] = auto.get('entity_id')
+                                        return result
                             elif isinstance(pkg_automations, dict):
                                 if automation_id in pkg_automations:
-                                    return {'location': 'packages', 'file_path': str(rel_path), 'key': automation_id, 'format': 'dict'}
+                                    auto = pkg_automations[automation_id]
+                                    result = {'location': 'packages', 'file_path': str(rel_path), 'key': automation_id, 'format': 'dict'}
+                                    if isinstance(auto, dict) and auto.get('entity_id'):
+                                        result['entity_id'] = auto.get('entity_id')
+                                    return result
+                                # Also check by entity_id in dict format
+                                for key, auto in pkg_automations.items():
+                                    if isinstance(auto, dict) and matches_automation(auto, automation_id):
+                                        result = {'location': 'packages', 'file_path': str(rel_path), 'key': key, 'format': 'dict'}
+                                        if auto.get('entity_id'):
+                                            result['entity_id'] = auto.get('entity_id')
+                                        return result
                     except Exception:
                         continue
         except Exception:
@@ -586,8 +645,11 @@ class HomeAssistantClient:
                 storage_data = json.loads(content)
                 if 'data' in storage_data and 'automations' in storage_data['data']:
                     for i, auto in enumerate(storage_data['data']['automations']):
-                        if auto.get('id') == automation_id:
-                            return {'location': 'storage', 'file_path': '.storage/automation.storage', 'index': i}
+                        if matches_automation(auto, automation_id):
+                            result = {'location': 'storage', 'file_path': '.storage/automation.storage', 'index': i}
+                            if auto.get('entity_id'):
+                                result['entity_id'] = auto.get('entity_id')
+                            return result
         except Exception:
             pass
         
@@ -648,10 +710,17 @@ class HomeAssistantClient:
                 await file_manager.write_file(file_path, new_content, create_backup=True)
             
             # Remove from Entity Registry
+            # Use actual entity_id from location if found, otherwise construct from automation_id
             try:
                 from app.services.ha_websocket import get_ws_client
                 ws_client = await get_ws_client()
-                entity_id = f"automation.{automation_id}"
+                # Get actual entity_id from location if available
+                actual_entity_id = location.get('entity_id')
+                if actual_entity_id and actual_entity_id.startswith('automation.'):
+                    entity_id = actual_entity_id
+                else:
+                    # Fallback to constructing from automation_id
+                    entity_id = f"automation.{automation_id}"
                 await ws_client.remove_entity_registry_entry(entity_id)
                 logger.debug(f"Removed automation from Entity Registry: {entity_id}")
             except Exception as reg_error:
@@ -839,8 +908,21 @@ class HomeAssistantClient:
                     storage_data = json.loads(content)
                     if 'data' in storage_data and 'scripts' in storage_data['data']:
                         scripts_dict = storage_data['data']['scripts']
+                        # Check by script_id (key in dict)
                         if script_id in scripts_dict:
                             return scripts_dict[script_id]
+                        # Also check by entity_id if script_id doesn't match
+                        # (scripts in storage are keyed by script_id, but Entity Registry may use different entity_id)
+                        for key, script_config in scripts_dict.items():
+                            if isinstance(script_config, dict):
+                                entity_id = script_config.get('entity_id', '')
+                                if entity_id:
+                                    if entity_id.startswith('script.'):
+                                        entity_id_clean = entity_id.replace('script.', '', 1)
+                                    else:
+                                        entity_id_clean = entity_id
+                                    if entity_id_clean == script_id or entity_id == script_id:
+                                        return script_config
             except Exception:
                 pass
             
@@ -916,21 +998,53 @@ class HomeAssistantClient:
         """
         Find where a script is stored (scripts.yaml, packages/*.yaml, or .storage)
         
+        Checks both script_id (as dict key) and entity_id (if present in script config)
+        to handle cases where Entity Registry entity_id differs from script_id.
+        
         Returns:
             Dict with keys: 'location' ('scripts.yaml', 'packages', or 'storage'),
-                           'file_path' (relative path)
+                           'file_path' (relative path), 'entity_id' (if found)
         """
         from app.services.file_manager import file_manager
         import yaml
         import json
         from pathlib import Path
         
+        # Helper to check if script matches
+        def matches_script(script_key, script_config, target_id):
+            # Check by key (script_id)
+            if script_key == target_id:
+                return True
+            # Also check entity_id if present in config
+            if isinstance(script_config, dict):
+                entity_id = script_config.get('entity_id', '')
+                if entity_id:
+                    if entity_id.startswith('script.'):
+                        entity_id_clean = entity_id.replace('script.', '', 1)
+                    else:
+                        entity_id_clean = entity_id
+                    if entity_id_clean == target_id or entity_id == target_id:
+                        return True
+            return False
+        
         # Try scripts.yaml
         try:
             content = await file_manager.read_file('scripts.yaml', suppress_not_found_logging=True)
             scripts = yaml.safe_load(content) or {}
-            if isinstance(scripts, dict) and script_id in scripts:
-                return {'location': 'scripts.yaml', 'file_path': 'scripts.yaml'}
+            if isinstance(scripts, dict):
+                if script_id in scripts:
+                    result = {'location': 'scripts.yaml', 'file_path': 'scripts.yaml'}
+                    script_config = scripts[script_id]
+                    if isinstance(script_config, dict) and script_config.get('entity_id'):
+                        result['entity_id'] = script_config.get('entity_id')
+                    return result
+                # Also check by entity_id
+                for key, script_config in scripts.items():
+                    if matches_script(key, script_config, script_id):
+                        result = {'location': 'scripts.yaml', 'file_path': 'scripts.yaml'}
+                        if isinstance(script_config, dict) and script_config.get('entity_id'):
+                            result['entity_id'] = script_config.get('entity_id')
+                        return result
         except Exception:
             pass
         
@@ -946,8 +1060,20 @@ class HomeAssistantClient:
                             pkg_scripts = data['script']
                             rel_path = yaml_file.relative_to(file_manager.config_path)
                             
-                            if isinstance(pkg_scripts, dict) and script_id in pkg_scripts:
-                                return {'location': 'packages', 'file_path': str(rel_path)}
+                            if isinstance(pkg_scripts, dict):
+                                if script_id in pkg_scripts:
+                                    result = {'location': 'packages', 'file_path': str(rel_path)}
+                                    script_config = pkg_scripts[script_id]
+                                    if isinstance(script_config, dict) and script_config.get('entity_id'):
+                                        result['entity_id'] = script_config.get('entity_id')
+                                    return result
+                                # Also check by entity_id
+                                for key, script_config in pkg_scripts.items():
+                                    if matches_script(key, script_config, script_id):
+                                        result = {'location': 'packages', 'file_path': str(rel_path)}
+                                        if isinstance(script_config, dict) and script_config.get('entity_id'):
+                                            result['entity_id'] = script_config.get('entity_id')
+                                        return result
                     except Exception:
                         continue
         except Exception:
@@ -962,7 +1088,18 @@ class HomeAssistantClient:
                 if 'data' in storage_data and 'scripts' in storage_data['data']:
                     scripts_dict = storage_data['data']['scripts']
                     if script_id in scripts_dict:
-                        return {'location': 'storage', 'file_path': '.storage/script.storage'}
+                        result = {'location': 'storage', 'file_path': '.storage/script.storage'}
+                        script_config = scripts_dict[script_id]
+                        if isinstance(script_config, dict) and script_config.get('entity_id'):
+                            result['entity_id'] = script_config.get('entity_id')
+                        return result
+                    # Also check by entity_id
+                    for key, script_config in scripts_dict.items():
+                        if matches_script(key, script_config, script_id):
+                            result = {'location': 'storage', 'file_path': '.storage/script.storage'}
+                            if isinstance(script_config, dict) and script_config.get('entity_id'):
+                                result['entity_id'] = script_config.get('entity_id')
+                            return result
         except Exception:
             pass
         
@@ -1024,10 +1161,17 @@ class HomeAssistantClient:
                 await file_manager.write_file(file_path, new_content, create_backup=True)
             
             # Remove from Entity Registry
+            # Use actual entity_id from location if found, otherwise construct from script_id
             try:
                 from app.services.ha_websocket import get_ws_client
                 ws_client = await get_ws_client()
-                entity_id = f"script.{script_id}"
+                # Get actual entity_id from location if available
+                actual_entity_id = location.get('entity_id')
+                if actual_entity_id and actual_entity_id.startswith('script.'):
+                    entity_id = actual_entity_id
+                else:
+                    # Fallback to constructing from script_id
+                    entity_id = f"script.{script_id}"
                 await ws_client.remove_entity_registry_entry(entity_id)
                 logger.debug(f"Removed script from Entity Registry: {entity_id}")
             except Exception as reg_error:

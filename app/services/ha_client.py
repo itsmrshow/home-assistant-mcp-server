@@ -201,7 +201,7 @@ class HomeAssistantClient:
     
     async def list_automations(self) -> List[Dict]:
         """
-        List all automations from Home Assistant (via REST API)
+        List all automations from Home Assistant (via WebSocket API)
         
         Returns all automations that HA has loaded, regardless of source:
         - From automations.yaml
@@ -212,25 +212,30 @@ class HomeAssistantClient:
             List of automation configurations
         """
         try:
-            result = await self._request('GET', 'config/automation/config')
-            # HA returns a dict where keys are automation_ids and values are configs
-            if isinstance(result, dict):
+            # Import here to avoid circular dependency
+            from app.services.ha_websocket import get_ws_client
+            
+            ws_client = await get_ws_client()
+            result = await ws_client._send_message({'type': 'config/automation/list'})
+            
+            # WebSocket returns a list of automations
+            if isinstance(result, list):
                 automations = []
-                for automation_id, config in result.items():
+                for automation in result:
                     # Ensure 'id' field is present
-                    automation = dict(config) if isinstance(config, dict) else config
-                    if 'id' not in automation:
-                        automation['id'] = automation_id
-                    automations.append(automation)
+                    automation_dict = dict(automation) if isinstance(automation, dict) else automation
+                    if 'id' not in automation_dict and 'automation_id' in automation_dict:
+                        automation_dict['id'] = automation_dict['automation_id']
+                    automations.append(automation_dict)
                 return automations
             return result if isinstance(result, list) else []
         except Exception as e:
-            logger.error(f"Failed to list automations via API: {e}")
+            logger.error(f"Failed to list automations via WebSocket API: {e}")
             raise
     
     async def get_automation(self, automation_id: str) -> Dict:
         """
-        Get single automation configuration by ID
+        Get single automation configuration by ID (via WebSocket API)
         
         Args:
             automation_id: Automation ID
@@ -239,7 +244,19 @@ class HomeAssistantClient:
             Automation configuration dict
         """
         try:
-            result = await self._request('GET', f'config/automation/config/{automation_id}', suppress_404_logging=True)
+            # Import here to avoid circular dependency
+            from app.services.ha_websocket import get_ws_client
+            
+            ws_client = await get_ws_client()
+            result = await ws_client._send_message({
+                'type': 'config/automation/get',
+                'automation_id': automation_id
+            })
+            
+            # Handle wrapped response format
+            if isinstance(result, dict) and 'result' in result:
+                result = result['result']
+            
             # Ensure 'id' field is present
             if isinstance(result, dict) and 'id' not in result:
                 result['id'] = automation_id
@@ -248,12 +265,12 @@ class HomeAssistantClient:
             error_msg = str(e)
             if '404' in error_msg or 'not found' in error_msg.lower():
                 raise Exception(f"Automation not found: {automation_id}")
-            logger.error(f"Failed to get automation {automation_id} via API: {e}")
+            logger.error(f"Failed to get automation {automation_id} via WebSocket API: {e}")
             raise
     
     async def create_automation(self, automation_config: Dict) -> Dict:
         """
-        Create new automation via REST API
+        Create new automation via WebSocket API
         
         Args:
             automation_config: Automation configuration dict (must include 'id')
@@ -266,16 +283,29 @@ class HomeAssistantClient:
             raise ValueError("Automation config must include 'id' field")
         
         try:
-            result = await self._request('POST', f'config/automation/config/{automation_id}', data=automation_config)
-            logger.info(f"Created automation via API: {automation_id}")
+            # Import here to avoid circular dependency
+            from app.services.ha_websocket import get_ws_client
+            
+            ws_client = await get_ws_client()
+            result = await ws_client._send_message({
+                'type': 'config/automation/create',
+                'automation_id': automation_id,
+                **automation_config
+            })
+            
+            # Handle wrapped response format
+            if isinstance(result, dict) and 'result' in result:
+                result = result['result']
+            
+            logger.info(f"Created automation via WebSocket API: {automation_id}")
             return result
         except Exception as e:
-            logger.error(f"Failed to create automation {automation_id} via API: {e}")
+            logger.error(f"Failed to create automation {automation_id} via WebSocket API: {e}")
             raise
     
     async def update_automation(self, automation_id: str, automation_config: Dict) -> Dict:
         """
-        Update existing automation via REST API
+        Update existing automation via WebSocket API
         
         Args:
             automation_id: Automation ID
@@ -285,19 +315,33 @@ class HomeAssistantClient:
             Updated automation configuration
         """
         try:
+            # Import here to avoid circular dependency
+            from app.services.ha_websocket import get_ws_client
+            
+            ws_client = await get_ws_client()
             # Ensure 'id' matches
             config = dict(automation_config)
             config['id'] = automation_id
-            result = await self._request('POST', f'config/automation/config/{automation_id}', data=config)
-            logger.info(f"Updated automation via API: {automation_id}")
+            
+            result = await ws_client._send_message({
+                'type': 'config/automation/update',
+                'automation_id': automation_id,
+                **config
+            })
+            
+            # Handle wrapped response format
+            if isinstance(result, dict) and 'result' in result:
+                result = result['result']
+            
+            logger.info(f"Updated automation via WebSocket API: {automation_id}")
             return result
         except Exception as e:
-            logger.error(f"Failed to update automation {automation_id} via API: {e}")
+            logger.error(f"Failed to update automation {automation_id} via WebSocket API: {e}")
             raise
     
     async def delete_automation(self, automation_id: str) -> Dict:
         """
-        Delete automation via REST API
+        Delete automation via WebSocket API
         
         Args:
             automation_id: Automation ID to delete
@@ -306,21 +350,33 @@ class HomeAssistantClient:
             Deletion result
         """
         try:
-            result = await self._request('DELETE', f'config/automation/config/{automation_id}')
-            logger.info(f"Deleted automation via API: {automation_id}")
+            # Import here to avoid circular dependency
+            from app.services.ha_websocket import get_ws_client
+            
+            ws_client = await get_ws_client()
+            result = await ws_client._send_message({
+                'type': 'config/automation/delete',
+                'automation_id': automation_id
+            })
+            
+            # Handle wrapped response format
+            if isinstance(result, dict) and 'result' in result:
+                result = result['result']
+            
+            logger.info(f"Deleted automation via WebSocket API: {automation_id}")
             return result
         except Exception as e:
             error_msg = str(e)
             if '404' in error_msg or 'not found' in error_msg.lower():
                 raise Exception(f"Automation not found: {automation_id}")
-            logger.error(f"Failed to delete automation {automation_id} via API: {e}")
+            logger.error(f"Failed to delete automation {automation_id} via WebSocket API: {e}")
             raise
     
     # ==================== Script API ====================
     
     async def list_scripts(self) -> Dict[str, Dict]:
         """
-        List all scripts from Home Assistant (via REST API)
+        List all scripts from Home Assistant (via WebSocket API)
         
         Returns all scripts that HA has loaded, regardless of source.
         
@@ -328,15 +384,29 @@ class HomeAssistantClient:
             Dict where keys are script_ids and values are script configs
         """
         try:
-            result = await self._request('GET', 'config/script/config')
+            # Import here to avoid circular dependency
+            from app.services.ha_websocket import get_ws_client
+            
+            ws_client = await get_ws_client()
+            result = await ws_client._send_message({'type': 'config/script/list'})
+            
+            # WebSocket returns a list, convert to dict keyed by script_id
+            if isinstance(result, list):
+                scripts_dict = {}
+                for script in result:
+                    script_dict = dict(script) if isinstance(script, dict) else script
+                    script_id = script_dict.get('script_id') or script_dict.get('id')
+                    if script_id:
+                        scripts_dict[script_id] = script_dict
+                return scripts_dict
             return result if isinstance(result, dict) else {}
         except Exception as e:
-            logger.error(f"Failed to list scripts via API: {e}")
+            logger.error(f"Failed to list scripts via WebSocket API: {e}")
             raise
     
     async def get_script(self, script_id: str) -> Dict:
         """
-        Get single script configuration by ID
+        Get single script configuration by ID (via WebSocket API)
         
         Args:
             script_id: Script ID
@@ -345,18 +415,30 @@ class HomeAssistantClient:
             Script configuration dict
         """
         try:
-            result = await self._request('GET', f'config/script/config/{script_id}', suppress_404_logging=True)
+            # Import here to avoid circular dependency
+            from app.services.ha_websocket import get_ws_client
+            
+            ws_client = await get_ws_client()
+            result = await ws_client._send_message({
+                'type': 'config/script/get',
+                'script_id': script_id
+            })
+            
+            # Handle wrapped response format
+            if isinstance(result, dict) and 'result' in result:
+                result = result['result']
+            
             return result
         except Exception as e:
             error_msg = str(e)
             if '404' in error_msg or 'not found' in error_msg.lower():
                 raise Exception(f"Script not found: {script_id}")
-            logger.error(f"Failed to get script {script_id} via API: {e}")
+            logger.error(f"Failed to get script {script_id} via WebSocket API: {e}")
             raise
     
     async def create_script(self, script_id: str, script_config: Dict) -> Dict:
         """
-        Create new script via REST API
+        Create new script via WebSocket API
         
         Args:
             script_id: Script ID
@@ -366,16 +448,29 @@ class HomeAssistantClient:
             Created script configuration
         """
         try:
-            result = await self._request('POST', f'config/script/config/{script_id}', data=script_config)
-            logger.info(f"Created script via API: {script_id}")
+            # Import here to avoid circular dependency
+            from app.services.ha_websocket import get_ws_client
+            
+            ws_client = await get_ws_client()
+            result = await ws_client._send_message({
+                'type': 'config/script/create',
+                'script_id': script_id,
+                **script_config
+            })
+            
+            # Handle wrapped response format
+            if isinstance(result, dict) and 'result' in result:
+                result = result['result']
+            
+            logger.info(f"Created script via WebSocket API: {script_id}")
             return result
         except Exception as e:
-            logger.error(f"Failed to create script {script_id} via API: {e}")
+            logger.error(f"Failed to create script {script_id} via WebSocket API: {e}")
             raise
     
     async def update_script(self, script_id: str, script_config: Dict) -> Dict:
         """
-        Update existing script via REST API
+        Update existing script via WebSocket API
         
         Args:
             script_id: Script ID
@@ -385,16 +480,29 @@ class HomeAssistantClient:
             Updated script configuration
         """
         try:
-            result = await self._request('POST', f'config/script/config/{script_id}', data=script_config)
-            logger.info(f"Updated script via API: {script_id}")
+            # Import here to avoid circular dependency
+            from app.services.ha_websocket import get_ws_client
+            
+            ws_client = await get_ws_client()
+            result = await ws_client._send_message({
+                'type': 'config/script/update',
+                'script_id': script_id,
+                **script_config
+            })
+            
+            # Handle wrapped response format
+            if isinstance(result, dict) and 'result' in result:
+                result = result['result']
+            
+            logger.info(f"Updated script via WebSocket API: {script_id}")
             return result
         except Exception as e:
-            logger.error(f"Failed to update script {script_id} via API: {e}")
+            logger.error(f"Failed to update script {script_id} via WebSocket API: {e}")
             raise
     
     async def delete_script(self, script_id: str) -> Dict:
         """
-        Delete script via REST API
+        Delete script via WebSocket API
         
         Args:
             script_id: Script ID to delete
@@ -403,14 +511,26 @@ class HomeAssistantClient:
             Deletion result
         """
         try:
-            result = await self._request('DELETE', f'config/script/config/{script_id}')
-            logger.info(f"Deleted script via API: {script_id}")
+            # Import here to avoid circular dependency
+            from app.services.ha_websocket import get_ws_client
+            
+            ws_client = await get_ws_client()
+            result = await ws_client._send_message({
+                'type': 'config/script/delete',
+                'script_id': script_id
+            })
+            
+            # Handle wrapped response format
+            if isinstance(result, dict) and 'result' in result:
+                result = result['result']
+            
+            logger.info(f"Deleted script via WebSocket API: {script_id}")
             return result
         except Exception as e:
             error_msg = str(e)
             if '404' in error_msg or 'not found' in error_msg.lower():
                 raise Exception(f"Script not found: {script_id}")
-            logger.error(f"Failed to delete script {script_id} via API: {e}")
+            logger.error(f"Failed to delete script {script_id} via WebSocket API: {e}")
             raise
 
 # Global client instance

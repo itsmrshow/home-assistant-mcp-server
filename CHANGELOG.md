@@ -20,7 +20,7 @@ Previously, the agent could only see and manage automations and scripts that wer
 
 #### The Solution
 
-We've completely rebuilt how the agent interacts with automations and scripts. Instead of reading and writing YAML files directly, the agent now uses Home Assistant's official REST API (`/api/config/automation/config` and `/api/config/script/config`). This means:
+We've completely rebuilt how the agent interacts with automations and scripts. Instead of reading and writing YAML files directly, the agent now uses Home Assistant's official WebSocket API (`config/automation/list`, `config/script/list`, etc.). This means:
 
 - ✅ **See everything**: `list_automations` and `list_scripts` now return ALL automations/scripts that Home Assistant knows about, regardless of where they're stored:
   - From `automations.yaml` / `scripts.yaml` (traditional files)

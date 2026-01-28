@@ -53,18 +53,17 @@ async def list_automations(ids_only: bool = Query(False, description="If true, r
     ```
     """
     try:
-        # Get all automations from HA API (includes all sources: files, packages, UI)
-        automations = await ha_client.list_automations()
-        
+        # Fast path: when only IDs are requested, use optimized ids_only mode in ha_client
         if ids_only:
-            # Extract IDs from automations list
-            automation_ids = [a.get('id') for a in automations if a.get('id')]
+            automation_ids = await ha_client.list_automations(ids_only=True)
             return {
                 "success": True,
                 "count": len(automation_ids),
                 "automation_ids": automation_ids
             }
         
+        # Full path: return full automation configurations
+        automations = await ha_client.list_automations()
         return {
             "success": True,
             "count": len(automations),

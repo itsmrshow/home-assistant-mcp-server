@@ -199,7 +199,7 @@ class HomeAssistantClient:
     
     # ==================== Automation API ====================
     
-    async def list_automations(self) -> List[Dict]:
+    async def list_automations(self, ids_only: bool = False) -> List[Dict]:
         """
         List all automations from Home Assistant (via Entity Registry + file system)
         
@@ -212,8 +212,12 @@ class HomeAssistantClient:
         We use Entity Registry to get all automation entities, then collect their
         configurations from files and .storage.
         
+        Args:
+            ids_only: If True, return only automation IDs (as strings) for fast listing.
+                      If False (default), return full automation configurations.
+        
         Returns:
-            List of automation configurations
+            List of automation configurations (ids_only=False) or list of IDs (ids_only=True)
         """
         try:
             # Import here to avoid circular dependency
@@ -233,7 +237,8 @@ class HomeAssistantClient:
                 if e.get('entity_id', '').startswith('automation.')
             ]
             
-            automations = []
+            automations: List[Dict] = []
+            automation_ids_result: List[str] = []
             automation_ids_seen = set()
             
             # OPTIMIZATION: Read all files ONCE and create a cache
@@ -312,7 +317,7 @@ class HomeAssistantClient:
                 pass
             
             # Now process Entity Registry automations using the cache
-            # First, try to match Entity Registry entities with cached automations by entity_id
+            # First, try to match Entity Registry entities with cached automations by entity_id / alias
             # This handles cases where Entity Registry uses different entity_id than automation id
             entity_id_to_auto_map = {}
             for auto in automation_cache.values():
@@ -330,6 +335,7 @@ class HomeAssistantClient:
                         if alias_key not in entity_id_to_auto_map:
                             entity_id_to_auto_map[alias_key] = auto
             
+            # Main pass: iterate over Entity Registry automations
             for entity in automation_entities:
                 entity_id = entity.get('entity_id', '')
                 if not entity_id.startswith('automation.'):
@@ -349,6 +355,12 @@ class HomeAssistantClient:
                     continue
                 automation_ids_seen.add(automation_id)
                 
+                # Fast path: if only IDs are requested, don't resolve full configs
+                if ids_only:
+                    if automation_id:
+                        automation_ids_result.append(automation_id)
+                    continue
+                
                 # Try to get config from cache by automation_id
                 config = automation_cache.get(automation_id)
                 if config:
@@ -361,6 +373,7 @@ class HomeAssistantClient:
                     automations.append(config)
                     continue
                 
+                # Try by automation_id key in map (may be entity_id without prefix or alias key)
                 config = entity_id_to_auto_map.get(automation_id)
                 if config:
                     automations.append(config)
@@ -382,94 +395,20 @@ class HomeAssistantClient:
                     automations.append(config)
                     continue
                 
-                # If not in cache, try to get it via get_automation (fallback)
-                # This handles cases where automation exists in Entity Registry but wasn't found in cache
-                try:
-                    full_config = await self.get_automation(automation_id)
-                    automations.append(full_config)
-                except Exception:
-                    # Last resort: try REST API to get automation by entity_id
-                    # Some UI-created automations have different id vs entity_id, and storage may not have entity_id field
-                    try:
-                        endpoint = f"config/automation/config/{entity_id}"
-                        try:
-                            api_result = await self._request('GET', endpoint, suppress_404_logging=True)
-                            if api_result:
-                                automations.append(api_result)
-                                continue
-                        except Exception:
-                            pass
-                    except Exception:
-                        pass
-                    
-                    # If REST API didn't work, search in .storage by entity_id, id, and alias
-                    # Entity Registry may use entity_id that doesn't match storage id or entity_id
-                    try:
-                        storage_file = file_manager.config_path / '.storage' / 'automation.storage'
-                        if storage_file.exists():
-                            content = storage_file.read_text(encoding='utf-8')
-                            storage_data = json.loads(content)
-                            if 'data' in storage_data and 'automations' in storage_data['data']:
-                                found = False
-                                # Get entity name from Entity Registry for alias matching
-                                entity_name = entity.get('name', '')
-                                
-                                for auto in storage_data['data']['automations']:
-                                    # Check by id
-                                    auto_id = auto.get('id')
-                                    if auto_id == automation_id:
-                                        automations.append(auto)
-                                        found = True
-                                        break
-                                    
-                                    # Check by entity_id (with and without 'automation.' prefix)
-                                    auto_entity_id = auto.get('entity_id', '')
-                                    if auto_entity_id:
-                                        if auto_entity_id == entity_id:
-                                            automations.append(auto)
-                                            found = True
-                                            break
-                                        if auto_entity_id.startswith('automation.'):
-                                            auto_entity_id_clean = auto_entity_id.replace('automation.', '', 1)
-                                            if auto_entity_id_clean == automation_id:
-                                                automations.append(auto)
-                                                found = True
-                                                break
-                                    
-                                    # Check by alias if entity_id from Entity Registry matches
-                                    # This handles cases where Entity Registry uses friendly name as entity_id
-                                    auto_alias = auto.get('alias', '')
-                                    if auto_alias and entity_name:
-                                        # Normalize both for comparison (lowercase, remove special chars)
-                                        auto_alias_norm = auto_alias.lower().replace(' ', '_').replace('-', '_')
-                                        entity_name_norm = entity_name.lower().replace(' ', '_').replace('-', '_')
-                                        automation_id_norm = automation_id.lower().replace(' ', '_').replace('-', '_')
-                                        
-                                        if (auto_alias_norm == automation_id_norm or 
-                                            auto_alias_norm == entity_name_norm or
-                                            automation_id_norm in auto_alias_norm or
-                                            auto_alias_norm in automation_id_norm):
-                                            automations.append(auto)
-                                            found = True
-                                            break
-                                    
-                                if not found:
-                                    # If still not found, at least add the ID
-                                    automations.append({'id': automation_id})
-                            else:
-                                automations.append({'id': automation_id})
-                        else:
-                            automations.append({'id': automation_id})
-                    except Exception:
-                        # If we still can't get it, at least add the ID
-                        automations.append({'id': automation_id})
+                # If still not resolved, include minimal stub with ID
+                automations.append({'id': automation_id})
             
             # Add file-based automations not in Entity Registry
             for auto_id, auto_config in automation_cache.items():
                 if auto_id not in automation_ids_seen:
-                    automations.append(auto_config)
                     automation_ids_seen.add(auto_id)
+                    if ids_only:
+                        automation_ids_result.append(auto_id)
+                    else:
+                        automations.append(auto_config)
             
+            if ids_only:
+                return automation_ids_result
             return automations
             
         except Exception as e:

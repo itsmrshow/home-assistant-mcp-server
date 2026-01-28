@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [2.10.34] - 2026-01-27
+## [2.10.35] - 2026-01-28
 
 ### 🚀 API-based automation & script management + Security fix
 

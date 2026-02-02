@@ -219,6 +219,12 @@ class HomeAssistantClient:
         Returns:
             List of automation configurations (ids_only=False) or list of IDs (ids_only=True)
         """
+        def _add_enabled_to_config(config: dict, enabled: bool) -> dict:
+            """Return a copy of config with 'enabled' set (avoid mutating cache)."""
+            if not isinstance(config, dict):
+                return config
+            return {**config, 'enabled': enabled}
+
         try:
             # Import here to avoid circular dependency
             from app.services.ha_websocket import get_ws_client
@@ -226,7 +232,7 @@ class HomeAssistantClient:
             import json
             import yaml
             from pathlib import Path
-            
+
             # Get all automation entities from Entity Registry
             ws_client = await get_ws_client()
             entity_registry = await ws_client.get_entity_registry_list()
@@ -361,55 +367,71 @@ class HomeAssistantClient:
                         automation_ids_result.append(automation_id)
                     continue
                 
+                # Entity registry enabled state: disabled_by is None => enabled
+                enabled = entity.get('disabled_by') is None
+
                 # Try to get config from cache by automation_id
                 config = automation_cache.get(automation_id)
                 if config:
-                    automations.append(config)
+                    automations.append(_add_enabled_to_config(config, enabled))
                     continue
-                
+
                 # Try to get by entity_id from Entity Registry
                 config = entity_id_to_auto_map.get(entity_id)
                 if config:
-                    automations.append(config)
+                    automations.append(_add_enabled_to_config(config, enabled))
                     continue
-                
+
                 # Try by automation_id key in map (may be entity_id without prefix or alias key)
                 config = entity_id_to_auto_map.get(automation_id)
                 if config:
-                    automations.append(config)
+                    automations.append(_add_enabled_to_config(config, enabled))
                     continue
-                
+
                 # Try to match by alias from Entity Registry name
                 entity_name = entity.get('name', '')
                 if entity_name:
                     alias_key = entity_name.lower().replace(' ', '_').replace('-', '_')
                     config = entity_id_to_auto_map.get(alias_key)
                     if config:
-                        automations.append(config)
+                        automations.append(_add_enabled_to_config(config, enabled))
                         continue
-                
+
                 # Also try matching automation_id normalized as alias
                 automation_id_normalized = automation_id.lower().replace(' ', '_').replace('-', '_')
                 config = entity_id_to_auto_map.get(automation_id_normalized)
                 if config:
-                    automations.append(config)
+                    automations.append(_add_enabled_to_config(config, enabled))
                     continue
-                
+
                 # If still not resolved, include minimal stub with ID
-                automations.append({'id': automation_id})
-            
-            # Add file-based automations not in Entity Registry
+                automations.append({'id': automation_id, 'enabled': enabled})
+
+            # Add file-based automations not in Entity Registry (deduplicate by canonical id)
             for auto_id, auto_config in automation_cache.items():
-                if auto_id not in automation_ids_seen:
-                    automation_ids_seen.add(auto_id)
-                    if ids_only:
-                        automation_ids_result.append(auto_id)
-                    else:
-                        automations.append(auto_config)
-            
+                canonical_id = (auto_config.get('id') if isinstance(auto_config, dict) else None) or auto_id
+                if canonical_id in automation_ids_seen:
+                    continue
+                automation_ids_seen.add(canonical_id)
+                if ids_only:
+                    automation_ids_result.append(canonical_id)
+                else:
+                    # Cache-only automations: enabled unknown, omit or True
+                    automations.append(_add_enabled_to_config(auto_config, True))
+
             if ids_only:
-                return automation_ids_result
-            return automations
+                return list(dict.fromkeys(automation_ids_result))  # deduplicate preserving order
+            # Final deduplication by id (keep first occurrence)
+            seen_ids: set = set()
+            deduped: List[Dict] = []
+            for a in automations:
+                aid = (a.get('id') if isinstance(a, dict) else None) or ''
+                if aid and aid in seen_ids:
+                    continue
+                if aid:
+                    seen_ids.add(aid)
+                deduped.append(a)
+            return deduped
             
         except Exception as e:
             logger.error(f"Failed to list automations: {e}")

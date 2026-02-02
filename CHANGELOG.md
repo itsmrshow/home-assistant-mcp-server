@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.10.36] - 2026-01-28
+
+### 🔧 List automations: deduplicate and add `enabled` field
+
+- **Deduplication**: `list_automations` now returns each automation at most once. Previously, the same automation could appear twice when it was present in both Entity Registry and in file/storage under different keys (e.g. same config under `id` and `entity_id`). Deduplication is by canonical automation `id`; order is preserved (Entity Registry first, then cache-only).
+- **`enabled` field**: Each automation in the full list now includes an `enabled` boolean when the agent can determine it from the Entity Registry (`disabled_by` is null ⇒ enabled). Cache-only automations (not in Entity Registry) get `enabled: true` by default. Minimal stubs (`id`-only) get `enabled` from the entity when available.
+- **IDs-only list**: The list of automation IDs is also deduplicated before return.
+
 ## [2.10.35] - 2026-01-28
 
 ### 🚀 API-based automation & script management + Security fix

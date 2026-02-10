@@ -4,7 +4,7 @@
 
 # Home Assistant MCP Server
 
-[![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)](https://github.com/itsmrshow/home-assistant-mcp-server)
+[![Version](https://img.shields.io/badge/version-3.1.0-blue.svg)](https://github.com/itsmrshow/home-assistant-mcp-server)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Docker Pulls](https://img.shields.io/docker/pulls/itsmrshow/home-assistant-mcp-server?logo=docker)](https://hub.docker.com/r/itsmrshow/home-assistant-mcp-server)
 [![Docker Hub](https://img.shields.io/badge/Docker%20Hub-itsmrshow%2Fhome--assistant--mcp--server-blue?logo=docker)](https://hub.docker.com/r/itsmrshow/home-assistant-mcp-server)
@@ -23,33 +23,65 @@
 **Home Assistant MCP Server** is a standalone FastAPI server that provides a REST API enabling AI assistants to interact with Home Assistant through the Model Context Protocol (MCP). It works with:
 
 - ✅ **Any Home Assistant installation:** Home Assistant Container, Core, Supervised, or OS
-- ✅ **Any AI client:** Cursor, Claude Desktop, or any MCP-compatible client
+- ✅ **Any AI client:** Cursor, VS Code + Copilot, Claude Desktop, or any MCP-compatible client
 - ✅ **Dockerized Home Assistant:** Specifically designed for containerized deployments
 
-### 🔍 What AI Can Do
+Let AI build your Home Assistant automations — or act as your DevOps for the ones you write by hand. Just describe what you need in natural language.
 
-**Analyze Your Setup:**
-- Read entire HA configuration (entities, automations, scripts, helpers)
-- Understand device capabilities and relationships
-- Learn existing automation patterns
+Transform the way you manage your smart home. This server enables **Cursor**, **Visual Studio Code (VS Code)**, **Claude Desktop**, or any **MCP-enabled IDE** to:
 
-**Build & Deploy:**
-- Create complete automation systems
-- Generate input helpers and template sensors
-- Write optimized scripts based on your devices
-- Deploy Lovelace dashboards
+- 📝 Analyze your Home Assistant configuration, entities, and devices
+- 🏗️ Create intelligent automations, scripts, and complete systems — including Home Assistant helpers that can be fully managed programmatically
+- 🎨 Design and customize Lovelace dashboards with full control over cards, layouts, and styling
+- 🖌️ Create and tweak themes for a personalized UI
+- 🔄 Safely deploy changes with automatic Git-based versioning
+- 🔍 Monitor and troubleshoot your setup through log analysis
+- 📦 Install and manage HACS integrations and custom repositories
 
-**Manage Community Integrations:**
-- Install and configure HACS
-- Search and install custom integrations
-- Manage themes and plugins
-- Keep repositories updated
+---
 
-**Safe Operations:**
-- Automatic git versioning of all changes
-- Configuration validation before applying
-- Rollback capability for any change
-- Full audit log of operations
+### 🔍 Analyze your setup
+
+✅ Read your full configuration — entities, automations, scripts, helpers
+✅ Understand your devices — capabilities, relations, and usage patterns
+✅ Learn existing logic — analyze how your current automations and scripts behave
+
+---
+
+### 🏗️ Build intelligence
+
+✅ Create complete systems — multiple interconnected automations in seconds
+✅ Generate helpers and sensors — tailored to your actual setup and needs
+✅ Write optimized scripts — based on real entities, areas, and devices
+✅ Refactor existing logic — improve or merge automations instead of starting from scratch
+
+---
+
+### 📊 Dashboards & UI
+
+✅ Create and update Lovelace dashboards — fully programmatically
+✅ Add, remove, or rearrange cards — stat, graphs, history, custom cards, and more
+✅ Control layouts and views — organize rooms, areas, and scenarios
+✅ Design and tweak themes — colors, typography, and styles for a personalized UI
+
+---
+
+### 🔒 Safe operations
+
+✅ Git-based versioning — every change is tracked with meaningful commit messages
+✅ Human-readable commits — AI explains *what* changed and *why*
+✅ Configuration validation — test before apply to reduce breaking changes
+✅ One-click rollback — revert to a previous state if something goes wrong
+✅ Activity log — full audit trail of what the agent did and when
+
+---
+
+### 📦 Extend with the community
+
+✅ Install and configure HACS — unlock 1000+ community integrations
+✅ Search repositories — themes, plugins, custom components, dashboards
+✅ Install integrations — one-command setup for new HACS components
+✅ Keep things fresh — update all HACS repositories from a single place
 
 ---
 
@@ -72,10 +104,16 @@
 - View repository details (stars, versions, authors)
 
 ### 🔧 Component Management
+- Create/Update/Delete Automations (via REST API)
+- Create/Update/Delete Scripts (via REST API)
 - Create/Delete Input Helpers (boolean, text, number, datetime, select)
-- Create/Delete Automations
-- Create/Delete Scripts
 - Automatic reload after changes
+
+### 🗂️ Registry Management
+- Entity Registry — list, update, and remove entities
+- Area Registry — create, update, and delete areas
+- Device Registry — list and manage devices
+- Dead entity detection — find orphaned entities
 
 ### 📁 File Management
 - List, read, write, append, delete files
@@ -184,11 +222,6 @@ HA_TOKEN=your_long_lived_access_token_here
 HA_AGENT_KEY=  # Leave empty to auto-generate, or set your own
 ```
 
-**Important:** Replace `YOUR_HOME_ASSISTANT_IP` with:
-- Your Home Assistant's IP address (e.g., `http://192.168.1.100:8123`)
-- Or `http://homeassistant.local:8123` if mDNS is working on your network
-- Or `http://host.docker.internal:8123` if HA is on the same machine
-
 Then build and start:
 ```bash
 # Build from source
@@ -233,6 +266,12 @@ After the server starts, check the `config/` directory for:
 1. Copy the contents from `config/mcp_client_config.json`
 2. Paste into `~/.cursor/mcp.json`
 3. Restart Cursor
+
+#### Quick Setup for VS Code + Copilot
+
+1. Copy the contents from `config/mcp_client_config.json`
+2. Paste into your VS Code MCP settings
+3. Restart VS Code
 
 #### Quick Setup for Claude Desktop
 
@@ -300,11 +339,13 @@ Once running, visit:
 **Automations:**
 - `GET /api/automations` - List automations
 - `POST /api/automations` - Create automation
+- `PUT /api/automations/{id}` - Update automation
 - `DELETE /api/automations/{id}` - Delete automation
 
 **Scripts:**
 - `GET /api/scripts` - List scripts
 - `POST /api/scripts` - Create script
+- `PUT /api/scripts/{id}` - Update script
 - `DELETE /api/scripts/{id}` - Delete script
 
 **Helpers:**
@@ -318,6 +359,12 @@ Once running, visit:
 - `GET /api/files/read` - Read file content
 - `POST /api/files/write` - Write file
 - `DELETE /api/files/delete` - Delete file
+
+**Registries:**
+- `GET /api/registries/entities/list` - List entity registry
+- `GET /api/registries/areas/list` - List areas
+- `GET /api/registries/devices/list` - List devices
+- `GET /api/registries/entities/dead` - Find orphaned entities
 
 **HACS:**
 - `POST /api/hacs/install` - Install HACS
@@ -333,6 +380,9 @@ Once running, visit:
 - `GET /api/backup/history` - View git history
 - `POST /api/backup/rollback` - Rollback to commit
 - `GET /api/backup/diff` - View changes
+
+**Security:**
+- `POST /api/regenerate-key` - Regenerate API key (requires auth)
 
 ---
 
@@ -353,7 +403,7 @@ Once running, visit:
 3. **API Key Management:**
    - Keep `HA_AGENT_KEY` secret
    - Don't share in public repositories
-   - Regenerate if compromised
+   - Use the `/api/regenerate-key` endpoint if compromised
 
 4. **Docker Security:**
    - Keep base images updated
@@ -400,6 +450,8 @@ export CONFIG_PATH=./config
 python -m app.main
 ```
 
+For more detailed development information, see [DEVELOPMENT.md](DEVELOPMENT.md) and [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ---
 
 ## 🐛 Troubleshooting
@@ -437,6 +489,16 @@ curl -H "Authorization: Bearer YOUR_TOKEN" http://YOUR_HA_IP:8123/api/
 - URL in MCP config matches server location
 - Client has been restarted after config changes
 
+### 'spawn npx ENOENT' Error
+
+If you see this error, make sure Node.js is installed on the machine running the MCP client:
+```bash
+# Install Node.js (varies by OS)
+# macOS: brew install node
+# Ubuntu: sudo apt install nodejs npm
+# Windows: download from nodejs.org
+```
+
 ### Changes Not Persisting
 
 **Check:**
@@ -448,7 +510,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" http://YOUR_HA_IP:8123/api/
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please:
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 1. Fork the repository
 2. Create a feature branch
@@ -460,7 +522,23 @@ Contributions are welcome! Please:
 
 ## 📝 Changelog
 
-### Version 3.0.0 (Current)
+See [CHANGELOG.md](CHANGELOG.md) for a detailed list of changes.
+
+### Version 3.1.0 (Current)
+- 🔄 Merged upstream changes from v2.10.0 through v2.10.36
+- 🗂️ Added Entity/Area/Device Registry API endpoints
+- 🔧 Switched automations and scripts to REST API for create/update/delete
+- 🔒 Added API key regeneration endpoint with auth requirement
+- 🔒 Security fixes for critical vulnerabilities
+- 📦 Improved HACS integration (repository access, install/update)
+- 💾 Improved git versioning with shadow repository and auto/manual modes
+- 📝 Added comprehensive test suite
+- 🛠️ Token-efficient script/automation tools and YAML helpers
+- 📖 Added CHANGELOG, CONTRIBUTING, DEVELOPMENT, and CODE_OF_CONDUCT docs
+- 🌐 Added VS Code + Copilot support
+- 🔍 Dead entity detection for finding orphaned entities
+
+### Version 3.0.0
 - 🔄 Forked from home-assistant-cursor-agent
 - 🐳 Converted to standalone Docker container
 - 🏠 Added support for any Home Assistant installation type
@@ -483,13 +561,6 @@ MIT License - see [LICENSE](LICENSE) file for details
 - **Original Project:** [home-assistant-cursor-agent](https://github.com/Coolver/home-assistant-cursor-agent) by [Coolver](https://github.com/Coolver)
 - **Model Context Protocol:** [Anthropic MCP](https://github.com/anthropics/mcp)
 - **Home Assistant:** [Home Assistant Project](https://www.home-assistant.io/)
-
----
-
-## 📚 Additional Documentation
-
-- **[Migration Guide](docs/MIGRATION_GUIDE.md)** - Upgrading from home-assistant-cursor-agent
-- **[Docker Hub README](docs/DOCKER_HUB_README.md)** - Docker Hub repository description
 
 ---
 

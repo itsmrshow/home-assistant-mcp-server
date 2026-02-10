@@ -1,7 +1,7 @@
 # Home Assistant MCP Server - Standalone Docker Image
 FROM python:3.11-alpine
 
-# Version: 3.0.0 - Standalone MCP Server (not an add-on)
+# Version: 3.1.0 - Standalone MCP Server (not an add-on)
 LABEL maintainer="Home Assistant MCP Server"
 LABEL description="MCP Server for Home Assistant - enables AI clients to manage HA via Model Context Protocol"
 

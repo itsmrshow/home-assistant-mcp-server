@@ -1,9 +1,9 @@
 """Helpers API endpoints"""
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 import logging
 import os
 import yaml
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from app.models.schemas import HelperCreate, Response
 from app.services.ha_client import ha_client
@@ -15,13 +15,22 @@ logger = logging.getLogger('ha_cursor_agent')
 
 CONFIG_FILE = "/config/configuration.yaml"
 
-# Each helper type gets its own file
+# Each helper-type domain gets its own YAML file which is referenced from configuration.yaml via:
+#   <domain>: !include <file>
+# For example:
+#   group: !include groups.yaml
+#   utility_meter: !include utility_meter.yaml
 HELPER_FILES = {
     'input_boolean': '/config/input_boolean.yaml',
     'input_text': '/config/input_text.yaml',
     'input_number': '/config/input_number.yaml',
     'input_datetime': '/config/input_datetime.yaml',
-    'input_select': '/config/input_select.yaml'
+    'input_select': '/config/input_select.yaml',
+    # YAML-based helpers that behave similarly to input_* from AI perspective
+    # These are not "input helpers" in HA UI, but are commonly used as building blocks
+    # and can be safely managed via YAML with the same pattern.
+    'group': '/config/groups.yaml',
+    'utility_meter': '/config/utility_meter.yaml',
 }
 
 
@@ -97,7 +106,7 @@ async def debug_services():
         
         # Extract helper-related services
         helper_services = {}
-        for domain in ['input_boolean', 'input_text', 'input_number', 'input_datetime', 'input_select']:
+        for domain in ['input_boolean', 'input_text', 'input_number', 'input_datetime', 'input_select', 'group', 'utility_meter']:
             if domain in all_services:
                 helper_services[domain] = all_services[domain]
         
@@ -112,14 +121,16 @@ async def debug_services():
 @router.get("/list")
 async def list_helpers():
     """
-    List all input helpers
+    List all helper-like entities
     
-    Returns all entities from helper domains:
+    Returns all entities from helper-related domains:
     - input_boolean
     - input_text
     - input_number
     - input_datetime
     - input_select
+    - group
+    - utility_meter
     
     Example response:
     ```json
@@ -140,8 +151,8 @@ async def list_helpers():
         # Get all entities
         all_states = await ha_client.get_states()
         
-        # Filter helper entities
-        helper_domains = ['input_boolean', 'input_text', 'input_number', 'input_datetime', 'input_select']
+        # Filter helper-like entities
+        helper_domains = ['input_boolean', 'input_text', 'input_number', 'input_datetime', 'input_select', 'group', 'utility_meter']
         helpers = [
             entity for entity in all_states 
             if any(entity['entity_id'].startswith(f"{domain}.") for domain in helper_domains)
@@ -161,16 +172,18 @@ async def list_helpers():
 @router.post("/create", response_model=Response)
 async def create_helper(helper: HelperCreate):
     """
-    Create input helper via YAML configuration
+    Create helper via YAML configuration
     
-    **Method:** Writes to helpers.yaml and reloads the integration
+    **Method:** Writes to dedicated YAML file per domain and reloads the integration
     
-    **Helper types:**
+    **Helper types (YAML-managed):**
     - `input_boolean` - Toggle/switch
     - `input_text` - Text input
     - `input_number` - Number slider
     - `input_datetime` - Date/time picker
     - `input_select` - Dropdown selection
+    - `group` - Entity groups (living_room_lights, etc.)
+    - `utility_meter` - Utility meter tracking (daily_energy, monthly_gas, etc.)
     
     **Example request (Boolean):**
     ```json
@@ -201,11 +214,11 @@ async def create_helper(helper: HelperCreate):
     """
     try:
         # Validate helper type
-        valid_types = ['input_boolean', 'input_text', 'input_number', 'input_datetime', 'input_select']
+        valid_types = ['input_boolean', 'input_text', 'input_number', 'input_datetime', 'input_select', 'group', 'utility_meter']
         if helper.type not in valid_types:
             raise HTTPException(status_code=400, detail=f"Invalid helper type. Must be one of: {', '.join(valid_types)}")
         
-        # Extract name from config (required)
+        # Extract name from config (required for all supported helper-like types)
         if 'name' not in helper.config:
             raise HTTPException(status_code=400, detail="config must include 'name' field")
         
@@ -237,10 +250,11 @@ async def create_helper(helper: HelperCreate):
         
         full_entity_id = f"{helper.type}.{entity_id}"
         
-        # Commit changes
-        if git_manager.enabled:
+        # Commit changes (only if auto mode is enabled)
+        if git_manager.git_versioning_auto:
+            commit_msg = helper.commit_message or f"Create helper: {full_entity_id} - {helper_name}"
             await git_manager.commit_changes(
-                f"Create helper: {full_entity_id} - {helper_name}",
+                commit_msg,
                 skip_if_processing=True
             )
         
@@ -256,7 +270,7 @@ async def create_helper(helper: HelperCreate):
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/delete/{entity_id}")
-async def delete_helper(entity_id: str):
+async def delete_helper(entity_id: str, commit_message: Optional[str] = Query(None, description="Custom commit message for Git backup")):
     """
     Delete input helper from YAML configuration or config entry
     
@@ -275,7 +289,7 @@ async def delete_helper(entity_id: str):
         domain, helper_id = entity_id.split('.', 1)
         
         # Validate domain
-        valid_types = ['input_boolean', 'input_text', 'input_number', 'input_datetime', 'input_select']
+        valid_types = ['input_boolean', 'input_text', 'input_number', 'input_datetime', 'input_select', 'group', 'utility_meter']
         if domain not in valid_types:
             raise HTTPException(status_code=400, detail=f"Invalid helper domain. Must be one of: {', '.join(valid_types)}")
         
@@ -306,7 +320,7 @@ async def delete_helper(entity_id: str):
         try:
             # Check if helper exists as entity (means it's a config entry helper)
             try:
-                state = await ha_client.get_state(entity_id)
+                state = await ha_client.get_state(entity_id, suppress_404_logging=True)
                 if state:
                     # Helper exists - try to find and delete its config entry
                     ws_client = await get_ws_client()
@@ -406,7 +420,19 @@ async def delete_helper(entity_id: str):
         # Always try this if helper still exists, even if we deleted from YAML
         # (restored entities may persist until restart, but we can try to remove from registry)
         try:
-            state = await ha_client.get_state(entity_id)
+            # Check if entity exists (404 is expected if already deleted from YAML)
+            try:
+                state = await ha_client.get_state(entity_id, suppress_404_logging=True)
+            except Exception as state_error:
+                # 404 is expected when entity doesn't exist (already deleted or never existed)
+                error_str = str(state_error)
+                if "404" in error_str or "Entity not found" in error_str:
+                    logger.debug(f"Entity {entity_id} not found (expected if already deleted): {error_str}")
+                    state = None
+                else:
+                    # Re-raise unexpected errors
+                    raise
+            
             if state:
                 ws_client = await get_ws_client()
                 
@@ -473,14 +499,19 @@ async def delete_helper(entity_id: str):
         except HTTPException:
             raise
         except Exception as e:
-            logger.warning(f"Could not delete via entity registry: {e}", exc_info=True)
+            # Don't log traceback for expected 404 errors
+            error_str = str(e)
+            if "404" in error_str or "Entity not found" in error_str:
+                logger.debug(f"Could not delete via entity registry (entity not found, expected): {error_str}")
+            else:
+                logger.warning(f"Could not delete via entity registry: {e}", exc_info=True)
         
         # If neither method worked, check if helper actually exists
         if not deleted_via_yaml and not deleted_via_config_entry:
             # Check if helper exists in HA
             helper_exists = False
             try:
-                state = await ha_client.get_state(entity_id)
+                state = await ha_client.get_state(entity_id, suppress_404_logging=True)
                 if state:
                     helper_exists = True
             except:
@@ -499,9 +530,10 @@ async def delete_helper(entity_id: str):
                     raise HTTPException(status_code=404, detail=f"Helper {entity_id} not found in {HELPER_FILES[domain]} and does not exist as an entity")
         
         # Commit changes if YAML was modified
-        if deleted_via_yaml and git_manager.enabled:
+        if deleted_via_yaml and git_manager.git_versioning_auto:
+            commit_msg = commit_message or f"Delete helper: {entity_id}"
             await git_manager.commit_changes(
-                f"Delete helper: {entity_id}",
+                commit_msg,
                 skip_if_processing=True
             )
         

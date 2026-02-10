@@ -3,11 +3,11 @@ services:
     image: itsmrshow/home-assistant-mcp-server:latest
     container_name: ha-mcp-server
     ports:
-      - "8099:8099"
+      - "8100:8100"
     volumes:
       - ./config:/config:rw  # Mount a directory for storing generated API keys and git history
     environment:
-      - PORT=8099
+      - PORT=8100
       - LOG_LEVEL=info
       - ENABLE_GIT=true
       - AUTO_BACKUP=true
@@ -18,8 +18,10 @@ services:
       - CONFIG_PATH=/config
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8099/api/health"]
-      interval: 30s
+      test: ["CMD", "curl", "-f", "http://localhost:8100/api/health"]
+      interval: 300s
       timeout: 10s
       retries: 3
       start_period: 30s
+    labels:
+      diun.enable: 'true'
